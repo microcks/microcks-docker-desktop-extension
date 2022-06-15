@@ -1,0 +1,22 @@
+{
+  "icon": "microcks.svg",
+  "ui": {
+    "dashboard-tab": {
+      "title": "Microcks",
+      "root": "ui",
+      "src": "index.html"
+    }
+  },
+  "host": {
+    "binaries": [
+      {
+        "darwin": [
+          { "path": "/host/unix/createvolumes.sh" }
+        ],
+        "linux": [
+          { "path": "/host/unix/createvolumes.sh" }
+        ]
+      }
+    ]
+  }
+}
