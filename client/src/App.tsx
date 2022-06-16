@@ -17,10 +17,15 @@
  * under the License.
  */
 import React, { useEffect, useState } from "react";
-
 import { Box, Button, Typography } from '@mui/material';
-
 import { createDockerDesktopClient } from '@docker/extension-api-client';
+
+import { getExtensionConfig, writePropertiesFiles } from "./api/config";
+import { ExtensionConfig } from "./types/ExtensionConfig";
+import { ContainerStatus } from "./types/ContainerStatus";
+import { getContainerInfo } from "./api/containers";
+
+const ddClient = createDockerDesktopClient();
 
 export function App() {
   let APP_CONTAINER: string = 'microcks-app';
@@ -28,20 +33,23 @@ export function App() {
   let MONGO_CONTAINER: string  = 'mincrocks-mongodb'
   let KAFKA_CONTAINER: string = 'microcks-kafka';
 
-  let postman_exist: boolean = false;
-  let mongo_exist: boolean = false;
+  let config: ExtensionConfig
 
-  let postman_running: boolean = false;
-  let mongo_running: boolean = false;
-
-  const ddClient = createDockerDesktopClient();
+  let postmanStatus: ContainerStatus
+  let mongoStatus: ContainerStatus
   
   useEffect(() => {
     console.log("Loading Microcks Docker Desktop Extension");
 
     initializeFileSystem();
-    refreshContainerInfo(POSTMAN_CONTAINER, postman_exist, postman_running);
-    refreshContainerInfo(MONGO_CONTAINER, mongo_exist, mongo_running);
+
+    getExtensionConfig().then(result => {
+      config = result;
+      writePropertiesFiles(config);
+    });
+
+    getContainerInfo(POSTMAN_CONTAINER).then(info => postmanStatus = info);
+    getContainerInfo(MONGO_CONTAINER).then(info => mongoStatus = info);
   });
 
   async function initializeFileSystem() {
@@ -65,23 +73,6 @@ export function App() {
     });
   }
 
-  async function refreshContainerInfo(container: string, existFlag: boolean, runningFlag: boolean) {
-    console.info('Looking for ' + container + ' container info.');
-    runningFlag = false;
-    const containerInfo = await ddClient.docker.cli.exec("inspect", [container]);
-    var infoObj = containerInfo.parseJsonObject();
-    if (infoObj != null && infoObj[0] != null) {
-      existFlag = true;
-      var containerObj = infoObj[0];
-      if (containerObj.State?.Status === 'running') {
-        runningFlag = true;
-      }
-    } else {
-      existFlag = false;
-    }
-    console.log(container + ' info - exists: ' + existFlag + ', is running: ' + runningFlag);
-  }
-
   async function launchMicrocks() {
     console.log("Launch Microcks!");
     ddClient.desktopUI.toast.success('Starting Microcks...');
@@ -94,33 +85,34 @@ export function App() {
     docker run -d --name "app" -e "SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *" -e "SPRING_PROFILES_ACTIVE=prod" -e "KEYCLOAK_ENABLED=false" -e "KAFKA_BOOTSTRAP_SERVER=kafka:19092" -e "SPRING_DATA_MONGODB_URI=mongodb://mongo:27017" -e "TEST_CALLBACK_URL=http://microcks:8080" -e "SPRING_DATA_MONGODB_DATABASE=microcks" -e "ASYNC_MINION_URL=http://microcks-async-minion:8081" -e "POSTMAN_RUNNER_URL=http://postman:3000" -p "8080:8080" -p "9090:9090" -v "./config:/deployments/config" "quay.io/microcks/microcks:latest"
     docker run -d --name "async-minion" -e "QUARKUS_PROFILE=docker-compose" -p "8081:8081" --restart "on-failure" -v "./config:/deployments/config" "quay.io/microcks/microcks-async-minion:latest"
     */
-   
-    if (!mongo_running) {
-      if (mongo_exist) {
+    
+    if (mongoStatus && !mongoStatus.isRunning) {
+      if (!mongoStatus.exists) {
         const mongoRes = await ddClient.docker.cli.exec("run", [
           "-d", "--name", MONGO_CONTAINER,
           "-v", "/Users/laurent/.microcks-docker-desktop-extension/data:/data/db",
           "mongo:3.4.23"],
           { stream: buildStreamingOpts(MONGO_CONTAINER) }
         );
-        mongo_exist = true;
+        mongoStatus.exists = true;
       } else {
         const mongoRes = await ddClient.docker.cli.exec("start", [MONGO_CONTAINER]);
       }
-      mongo_running = true;
+      mongoStatus.isRunning = true;
     }
-    if (!postman_running) {
-      if (postman_exist) {
+
+    if (postmanStatus && !postmanStatus.isRunning) {
+      if (!postmanStatus.exists) {
         const postmanRes = await ddClient.docker.cli.exec("run", [
           "-d", "--name", POSTMAN_CONTAINER,
           "quay.io/microcks/microcks-postman-runtime:latest"],
           { stream: buildStreamingOpts(POSTMAN_CONTAINER) }
         );
-        postman_exist = true;
+        postmanStatus.exists = true;
       } else {
         const postmanRes = await ddClient.docker.cli.exec("start", [POSTMAN_CONTAINER]);
       }
-      postman_running = true;
+      postmanStatus.isRunning = true;
     }
     /*
     const kafkaRes = await ddClient.docker.cli.exec("run", [

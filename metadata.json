@@ -16,6 +16,30 @@
         "linux": [
           { "path": "/host/unix/createvolumes.sh" }
         ]
+      },
+      {
+        "darwin": [
+          { "path": "/host/unix/readconf.sh" }
+        ],
+        "linux": [
+          { "path": "/host/unix/readconf.sh" }
+        ]
+      },
+      {
+        "darwin": [
+          { "path": "/host/unix/writeconf.sh" }
+        ],
+        "linux": [
+          { "path": "/host/unix/writeconf.sh" }
+        ]
+      },
+      {
+        "darwin": [
+          { "path": "/host/unix/writeproperties.sh" }
+        ],
+        "linux": [
+          { "path": "/host/unix/writeproperties.sh" }
+        ]
       }
     ]
   }
