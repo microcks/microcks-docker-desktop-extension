@@ -20,10 +20,12 @@ import React, { useEffect, useState } from "react";
 import { Box, Button, Typography } from '@mui/material';
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 
-import { getExtensionConfig, writePropertiesFiles } from "./api/config";
+import { getExtensionConfig, getHome, writePropertiesFiles } from "./api/config";
 import { ExtensionConfig } from "./types/ExtensionConfig";
 import { ContainerStatus } from "./types/ContainerStatus";
 import { getContainerInfo } from "./api/containers";
+import { ensureNetworkExists } from "./api/network";
+import { EXTENSION_NETWORK } from "./utils/constants";
 
 const ddClient = createDockerDesktopClient();
 
@@ -33,8 +35,10 @@ export function App() {
   let MONGO_CONTAINER: string  = 'mincrocks-mongodb'
   let KAFKA_CONTAINER: string = 'microcks-kafka';
 
+  let appDir: string;
   let config: ExtensionConfig
 
+  let appStatus: ContainerStatus
   let postmanStatus: ContainerStatus
   let mongoStatus: ContainerStatus
   
@@ -43,11 +47,20 @@ export function App() {
 
     initializeFileSystem();
 
+    getHome().then(result => {
+      console.log("Home path: " + result);
+      if (result != null) {
+        result = result.replace(/\n/g, '');
+        appDir = result + "/.microcks-docker-desktop-extension";
+        console.log("Extension dir: " + appDir);
+      }
+    });
     getExtensionConfig().then(result => {
       config = result;
       writePropertiesFiles(config);
     });
 
+    getContainerInfo(APP_CONTAINER).then(info => appStatus = info);
     getContainerInfo(POSTMAN_CONTAINER).then(info => postmanStatus = info);
     getContainerInfo(MONGO_CONTAINER).then(info => mongoStatus = info);
   });
@@ -85,35 +98,77 @@ export function App() {
     docker run -d --name "app" -e "SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *" -e "SPRING_PROFILES_ACTIVE=prod" -e "KEYCLOAK_ENABLED=false" -e "KAFKA_BOOTSTRAP_SERVER=kafka:19092" -e "SPRING_DATA_MONGODB_URI=mongodb://mongo:27017" -e "TEST_CALLBACK_URL=http://microcks:8080" -e "SPRING_DATA_MONGODB_DATABASE=microcks" -e "ASYNC_MINION_URL=http://microcks-async-minion:8081" -e "POSTMAN_RUNNER_URL=http://postman:3000" -p "8080:8080" -p "9090:9090" -v "./config:/deployments/config" "quay.io/microcks/microcks:latest"
     docker run -d --name "async-minion" -e "QUARKUS_PROFILE=docker-compose" -p "8081:8081" --restart "on-failure" -v "./config:/deployments/config" "quay.io/microcks/microcks-async-minion:latest"
     */
-    
-    if (mongoStatus && !mongoStatus.isRunning) {
-      if (!mongoStatus.exists) {
-        const mongoRes = await ddClient.docker.cli.exec("run", [
-          "-d", "--name", MONGO_CONTAINER,
-          "-v", "/Users/laurent/.microcks-docker-desktop-extension/data:/data/db",
-          "mongo:3.4.23"],
-          { stream: buildStreamingOpts(MONGO_CONTAINER) }
-        );
-        mongoStatus.exists = true;
-      } else {
-        const mongoRes = await ddClient.docker.cli.exec("start", [MONGO_CONTAINER]);
-      }
-      mongoStatus.isRunning = true;
-    }
 
-    if (postmanStatus && !postmanStatus.isRunning) {
-      if (!postmanStatus.exists) {
-        const postmanRes = await ddClient.docker.cli.exec("run", [
-          "-d", "--name", POSTMAN_CONTAINER,
-          "quay.io/microcks/microcks-postman-runtime:latest"],
-          { stream: buildStreamingOpts(POSTMAN_CONTAINER) }
-        );
-        postmanStatus.exists = true;
+    ensureNetworkExists().then(exists => {
+      if (exists) {
+        if (mongoStatus && !mongoStatus.isRunning) {
+          if (!mongoStatus.exists) {
+            const mongoRes = ddClient.docker.cli.exec("run", ["-d",
+              "--name", MONGO_CONTAINER,
+              "--network", EXTENSION_NETWORK,
+              "--hostname", "mongo",
+              "-v", appDir + "/data:/data/db",
+              "mongo:3.4.23"],
+              { stream: buildStreamingOpts(MONGO_CONTAINER) }
+            );
+            mongoStatus.exists = true;
+          } else {
+            const mongoRes = ddClient.docker.cli.exec("start", [MONGO_CONTAINER]);
+          }
+          mongoStatus.isRunning = true;
+        }
+    
+        if (postmanStatus && !postmanStatus.isRunning) {
+          if (!postmanStatus.exists) {
+            const postmanRes = ddClient.docker.cli.exec("run", ["-d",
+              "--name", POSTMAN_CONTAINER,
+              "--network", EXTENSION_NETWORK,
+              "--hostname", "postman",
+              "quay.io/microcks/microcks-postman-runtime:latest"],
+              { stream: buildStreamingOpts(POSTMAN_CONTAINER) }
+            );
+            postmanStatus.exists = true;
+          } else {
+            const postmanRes = ddClient.docker.cli.exec("start", [POSTMAN_CONTAINER]);
+          }
+          postmanStatus.isRunning = true;
+        }
+    
+        if (appStatus && !appStatus.isRunning) {
+          if (!appStatus.exists) {
+            console.log("Extension dir: " + appDir);
+            const appRes = ddClient.docker.cli.exec("run", ["-d",
+              "--name", APP_CONTAINER,
+              "--network", EXTENSION_NETWORK,
+              "--hostname", "app",
+              "-v", appDir + "/config:/deployments/config",
+              "-e", "SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *",
+              "-e", "SPRING_PROFILES_ACTIVE=prod",
+              "-e", "KEYCLOAK_ENABLED=false",
+              "-e", "KAFKA_BOOTSTRAP_SERVER=kafka:19092",
+              "-e", "SPRING_DATA_MONGODB_URI=mongodb://mongo:27017",
+              "-e", "SPRING_DATA_MONGODB_DATABASE=microcks",
+              "-e", "TEST_CALLBACK_URL=http://microcks:8080",
+              "-e", "ASYNC_MINION_URL=http://microcks-async-minion:8081",
+              "-e", "POSTMAN_RUNNER_URL=http://postman:3000",
+              "-p", "8080:8080", "-p", "9090:9090",
+              "quay.io/microcks/microcks:latest"],
+              { stream: buildStreamingOpts(APP_CONTAINER) }
+            );
+            appStatus.exists = true;
+          } else {
+            const appRes = ddClient.docker.cli.exec("start", [APP_CONTAINER]);
+          }
+          appStatus.isRunning = true;
+        }
       } else {
-        const postmanRes = await ddClient.docker.cli.exec("start", [POSTMAN_CONTAINER]);
+        // TODO: Manage this low-level error.
+        console.error('Error while ensuring extension network exists');
       }
-      postmanStatus.isRunning = true;
-    }
+    });
+    
+    
+
     /*
     const kafkaRes = await ddClient.docker.cli.exec("run", [
       "-d", "--name", "kafka",

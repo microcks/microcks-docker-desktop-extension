@@ -20,6 +20,16 @@ import { ExtensionConfig } from "../types/ExtensionConfig";
 import { APPLICATION_PROPERTIES, FEATURES_PROPERTIES } from "../utils/config";
 import { execOnHost, throwErrorAsString } from "./utils";
 
+export async function getHome(): Promise<string> {
+  let cmdResult;
+  try {
+    cmdResult = await execOnHost('readhome.sh', 'readhome.bat', []);
+  } catch (e: any) {
+    throwErrorAsString(e);
+  }
+  return cmdResult.stdout;
+}
+
 /** */
 export async function getExtensionConfig(): Promise<ExtensionConfig> {
   let cmdResult;
@@ -58,8 +68,6 @@ export async function writePropertiesFiles(config: ExtensionConfig) {
   // For now: just use the default.
   let applicationProperties = APPLICATION_PROPERTIES;
   let featuresProperties = FEATURES_PROPERTIES;
-
-  console.log('featuresProperties: ' + featuresProperties);
 
   let cmdResult;
   try {

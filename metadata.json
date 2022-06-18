@@ -27,6 +27,14 @@
       },
       {
         "darwin": [
+          { "path": "/host/unix/readhome.sh" }
+        ],
+        "linux": [
+          { "path": "/host/unix/readhome.sh" }
+        ]
+      },
+      {
+        "darwin": [
           { "path": "/host/unix/writeconf.sh" }
         ],
         "linux": [

@@ -19,6 +19,7 @@
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 
 import { ContainerStatus } from "../types/ContainerStatus";
+import { throwErrorAsString } from './utils';
 
 const ddClient = createDockerDesktopClient();
 
@@ -29,17 +30,27 @@ export async function getContainerInfo(container: string): Promise<ContainerStat
   let existFlag: boolean = false;
   let runningFlag: boolean = false;
 
-  const containerInfo = await ddClient.docker.cli.exec("inspect", [container]);
-  var infoObj = containerInfo.parseJsonObject();
-  if (infoObj != null && infoObj[0] != null) {
-    existFlag = true;
-    var containerObj = infoObj[0];
-    if (containerObj.State?.Status === 'running') {
-      runningFlag = true;
+  let containerInfo;
+  try {
+    containerInfo = await ddClient.docker.cli.exec("inspect", [container]);
+
+    var infoObj = containerInfo.parseJsonObject();
+    if (infoObj != null && infoObj[0] != null) {
+      existFlag = true;
+      var containerObj = infoObj[0];
+      if (containerObj.State?.Status === 'running') {
+        runningFlag = true;
+      }
+    } else {
+      existFlag = false;
+    }  
+  } catch (e: any) {
+    if (e.stderr !== undefined && (e.stderr.includes('No such object'))) {
+      return new ContainerStatus(false, false);
     }
-  } else {
-    existFlag = false;
+    throwErrorAsString(e);
   }
+  
   console.debug(container + ' info - exists: ' + existFlag + ', is running: ' + runningFlag);
   return new ContainerStatus(existFlag, runningFlag);
 }
