@@ -46,11 +46,13 @@ export async function getContainerInfo(container: string): Promise<ContainerStat
     }  
   } catch (e: any) {
     if (e.stderr !== undefined && (e.stderr.includes('No such object'))) {
+      console.info(container + ' info - exists: ' + existFlag + ', is running: ' + runningFlag);
       return new ContainerStatus(false, false);
+    } else {
+      throwErrorAsString(e);
     }
-    throwErrorAsString(e);
   }
   
-  console.debug(container + ' info - exists: ' + existFlag + ', is running: ' + runningFlag);
+  console.info(container + ' info - exists: ' + existFlag + ', is running: ' + runningFlag);
   return new ContainerStatus(existFlag, runningFlag);
 }
