@@ -68,6 +68,7 @@ const App = () => {
   let POSTMAN_CONTAINER: string = 'microcks-postman';
   let MONGO_CONTAINER: string = 'mincrocks-mongodb';
   let KAFKA_CONTAINER: string = 'microcks-kafka';
+  let ASYNC_MINION_CONTAINER: string = 'microcks-async-minion';
 
   let appDir: string;
   let config: ExtensionConfig;
@@ -75,6 +76,8 @@ const App = () => {
   // let appStatus: ContainerStatus;
   let postmanStatus: ContainerStatus;
   let mongoStatus: ContainerStatus;
+  let kafkaStatus: ContainerStatus;
+  let asyncMinionStatus: ContainerStatus;
 
   useEffect(() => {
     console.log('Loading Microcks Extension for Docker Desktop.');
@@ -265,6 +268,72 @@ const App = () => {
             // const appRes = ddClient.docker.cli.exec('start', [APP_CONTAINER]);
           }
           appStatus.isRunning = true;
+        }
+
+        if (config.asyncEnabled) {
+          console.info(
+            'Async configuration is enabled, launching async related containers...',
+          );
+          if (kafkaStatus && !kafkaStatus.isRunning) {
+            if (!kafkaStatus.exists) {
+              const kafkaRes = ddClient.docker.cli.exec(
+                'run',
+                [
+                  '-d',
+                  '--name',
+                  KAFKA_CONTAINER,
+                  '--network',
+                  EXTENSION_NETWORK,
+                  '--hostname',
+                  'kafka',
+                  '-p',
+                  '9092:9092',
+                  '-p',
+                  '19092:19092',
+                  'vectorized/redpanda:v21.10.2',
+                  'redpanda start --overprovisioned --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false --kafka-addr PLAINTEXT://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092 --advertise-kafka-addr PLAINTEXT://kafka:19092,EXTERNAL://localhost:9092',
+                ],
+                { stream: buildStreamingOpts(KAFKA_CONTAINER) },
+              );
+              kafkaStatus.exists = true;
+            } else {
+              const kafkaRes = ddClient.docker.cli.exec('start', [
+                KAFKA_CONTAINER,
+              ]);
+            }
+            kafkaStatus.isRunning = true;
+          }
+
+          if (asyncMinionStatus && !asyncMinionStatus.isRunning) {
+            if (!asyncMinionStatus.exists) {
+              const minionRes = ddClient.docker.cli.exec(
+                'run',
+                [
+                  '-d',
+                  '--name',
+                  ASYNC_MINION_CONTAINER,
+                  '--network',
+                  EXTENSION_NETWORK,
+                  '--hostname',
+                  'microcks-async-minion',
+                  '-e',
+                  'QUARKUS_PROFILE=docker-compose',
+                  '--restart',
+                  'on-failure',
+                  '-p',
+                  '8081:8081',
+                  'quay.io/microcks/microcks-async-minion:latest',
+                ],
+                { stream: buildStreamingOpts(ASYNC_MINION_CONTAINER) },
+              );
+              asyncMinionStatus.exists = true;
+            } else {
+              const minionRes = ddClient.docker.cli.exec('start', [
+                ASYNC_MINION_CONTAINER,
+              ]);
+            }
+            asyncMinionStatus.isRunning = true;
+          }
         }
       } else {
         // TODO: Manage this low-level error.
