@@ -24,6 +24,7 @@ LABEL org.opencontainers.image.title="Microcks" \
     com.docker.extension.changelog=""
 
 COPY --from=client-builder /app/client/dist ui
+COPY docker-compose.yaml .
 COPY metadata.json .
 COPY host ./host
 COPY microcks.svg .

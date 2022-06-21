@@ -3,51 +3,34 @@
   "ui": {
     "dashboard-tab": {
       "title": "Microcks",
-      "root": "ui",
+      "root": "/ui",
       "src": "index.html"
     }
+  },
+  "vm": {
+    "composefile": "docker-compose.yaml"
   },
   "host": {
     "binaries": [
       {
-        "darwin": [
-          { "path": "/host/unix/createvolumes.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/createvolumes.sh" }
-        ]
+        "darwin": [{ "path": "/host/unix/createvolumes.sh" }],
+        "linux": [{ "path": "/host/unix/createvolumes.sh" }]
       },
       {
-        "darwin": [
-          { "path": "/host/unix/readconf.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/readconf.sh" }
-        ]
+        "darwin": [{ "path": "/host/unix/readconf.sh" }],
+        "linux": [{ "path": "/host/unix/readconf.sh" }]
       },
       {
-        "darwin": [
-          { "path": "/host/unix/readhome.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/readhome.sh" }
-        ]
+        "darwin": [{ "path": "/host/unix/readhome.sh" }],
+        "linux": [{ "path": "/host/unix/readhome.sh" }]
       },
       {
-        "darwin": [
-          { "path": "/host/unix/writeconf.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/writeconf.sh" }
-        ]
+        "darwin": [{ "path": "/host/unix/writeconf.sh" }],
+        "linux": [{ "path": "/host/unix/writeconf.sh" }]
       },
       {
-        "darwin": [
-          { "path": "/host/unix/writeproperties.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/writeproperties.sh" }
-        ]
+        "darwin": [{ "path": "/host/unix/writeproperties.sh" }],
+        "linux": [{ "path": "/host/unix/writeproperties.sh" }]
       }
     ]
   }
