@@ -20,7 +20,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Button, Typography } from '@mui/material';
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 
-import { getExtensionConfig, getHome, writePropertiesFiles } from "./api/config";
+import { initializeFileSystem, getExtensionConfig, getHome, writePropertiesFiles } from "./api/config";
 import { ExtensionConfig } from "./types/ExtensionConfig";
 import { ContainerStatus } from "./types/ContainerStatus";
 import { getContainerInfo } from "./api/containers";
@@ -48,8 +48,16 @@ export function App() {
   useEffect(() => {
     console.log("Loading Microcks Docker Desktop Extension");
 
-    initializeFileSystem();
+    //initializeFileSystem();
+    initializeFileSystem().then(result => {
+      if (result) {
+        initializeExtension();  
+      }
+      // TODO: managed this low level error that prevent extension initialization.
+    });
+  });
 
+  function initializeExtension() {
     getHome().then(result => {
       console.log("Home path: " + result);
       if (result != null) {
@@ -68,27 +76,6 @@ export function App() {
     getContainerInfo(MONGO_CONTAINER).then(info => mongoStatus = info);
     getContainerInfo(KAFKA_CONTAINER).then(info => kafkaStatus = info);
     getContainerInfo(ASYNC_MINION_CONTAINER).then(info => asyncMinionStatus = info);
-  });
-
-  async function initializeFileSystem() {
-    const result = await ddClient.extension.host?.cli.exec('createvolumes.sh', [], 
-    {
-      stream: {
-        onOutput(data: { stdout: string; stderr?: undefined } | { stdout?: undefined; stderr: string }): void {
-          if (data.stdout) {
-            console.error("[data:stdout] " + data.stdout);
-          } else {
-            console.error(data.stderr);
-          }
-        },
-        onError(error: any): void {
-          console.error('Filesystem intialization error: ' + error);
-        },
-        onClose(exitCode: number): void {
-          console.log('Filesystem initialization finished with exit code ' + exitCode);
-        },
-      },
-    });
   }
 
   async function launchMicrocks() {

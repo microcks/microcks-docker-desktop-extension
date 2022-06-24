@@ -20,6 +20,24 @@ import { ExtensionConfig } from "../types/ExtensionConfig";
 import { APPLICATION_PROPERTIES, FEATURES_PROPERTIES } from "../utils/config";
 import { execOnHost, throwErrorAsString } from "./utils";
 
+export async function initializeFileSystem(): Promise<boolean> {
+  let cmdResult;
+  try {
+    cmdResult = await execOnHost('createvolumes.sh', 'createvolumes.bat', []);
+  } catch (e: any) {
+    console.error('Filesystem intialization error: ' + e);
+    return false;
+  }
+  if (!cmdResult.code) {
+    console.log('Filesystem initialization finished without exit code');
+    return true
+  } else if (cmdResult.code == 0) {
+    console.log('Filesystem initialization finished with exit code ' + cmdResult.code);
+    return true;
+  }
+  return false;
+}
+
 export async function getHome(): Promise<string> {
   let cmdResult;
   try {
