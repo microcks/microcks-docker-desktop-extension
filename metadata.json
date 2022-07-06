@@ -7,9 +7,6 @@
       "src": "index.html"
     }
   },
-  "vm": {
-    "composefile": "docker-compose.yaml"
-  },
   "host": {
     "binaries": [
       {
@@ -36,6 +33,16 @@
         "darwin": [{ "path": "/host/unix/writeproperties.sh" }],
         "linux": [{ "path": "/host/unix/writeproperties.sh" }],
         "windows": [{ "path": "/host/windows/writeproperties.bat" }]
+      },
+      {
+        "darwin": [{ "path": "/host/templates/application.properties" }],
+        "linux": [{ "path": "/host/templates/application.properties" }],
+        "windows": [{ "path": "/host/templates/application.properties" }]
+      },
+      {
+        "darwin": [{ "path": "/host/templates/features.properties" }],
+        "linux": [{ "path": "/host/templates/features.properties" }],
+        "windows": [{ "path": "/host/templates/features.properties" }]
       }
     ]
   }

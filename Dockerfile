@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/usr/local/share/.cache/yarn-${TARGETARCH} yarn bu
 FROM debian:bullseye-slim
 LABEL org.opencontainers.image.title="Microcks" \
     org.opencontainers.image.description="Easily mock and test REST, GraphQL and Async APIs." \
-    org.opencontainers.image.vendor="MicrocksIO" \
+    org.opencontainers.image.vendor="Microcks" \
     com.docker.desktop.extension.api.version=">= 0.2.3" \
     com.docker.desktop.extension.icon="https://microcks.io/images/microcks-logo-blue.png" \
     com.docker.extension.screenshots="[]" \

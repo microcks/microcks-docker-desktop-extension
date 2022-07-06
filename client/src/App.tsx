@@ -47,7 +47,7 @@ const useDockerDesktopClient = () => {
   return client;
 };
 
-const isWindows = async () => {
+const isWindows = () => {
   let windowsSystem = navigator.platform.startsWith('Win');
   return windowsSystem;
 };
@@ -83,36 +83,47 @@ const App = () => {
   useEffect(() => {
     console.log('Loading Microcks Extension for Docker Desktop.');
 
-    //initializeFileSystem();
-    initializeFileSystem().then(result => {
+    initializeFileSystem().then((result) => {
       if (result) {
-        initializeExtension();  
+        initializeExtension();
       }
       // TODO: managed this low level error that prevent extension initialization.
     });
-  });
+  }, []);
 
-  function initializeExtension() {
-    getHome().then(result => {
-      console.log("Home path: " + result);
+  const initializeExtension = () => {
+    getHome().then((result) => {
+      console.log('Home path: ' + result);
       if (result != null) {
         result = result.replace(/\n/g, '');
-        appDir = result + "/.microcks-docker-desktop-extension";
-        console.log("Extension dir: " + appDir);
+        appDir =
+          result +
+          (isWindows() ? '\\' : '/') +
+          '.microcks-docker-desktop-extension';
+        console.log('Extension dir: ' + appDir);
       }
-      const svcs = result?.parseJsonObject() as Service[];
+      // const svcs = result?.parseJsonObject() as Service[];
+      const svcs = result;
       console.log(svcs);
-      setServices(svcs);
-    };
+      // setServices(svcs);
+    });
 
-    getContainerInfo(APP_CONTAINER).then(info => setAppStatus(info));
-    getContainerInfo(POSTMAN_CONTAINER).then(info => postmanStatus = info);
-    getContainerInfo(MONGO_CONTAINER).then(info => mongoStatus = info);
-    getContainerInfo(KAFKA_CONTAINER).then(info => kafkaStatus = info);
-    getContainerInfo(ASYNC_MINION_CONTAINER).then(info => asyncMinionStatus = info);
-  }
+    getExtensionConfig().then((result) => {
+      config = result;
+      console.log('Config:', config);
+      writePropertiesFiles(config);
+    });
 
-  async function launchMicrocks() {
+    getContainerInfo(APP_CONTAINER).then((info) => setAppStatus(info));
+    getContainerInfo(POSTMAN_CONTAINER).then((info) => (postmanStatus = info));
+    getContainerInfo(MONGO_CONTAINER).then((info) => (mongoStatus = info));
+    getContainerInfo(KAFKA_CONTAINER).then((info) => (kafkaStatus = info));
+    getContainerInfo(ASYNC_MINION_CONTAINER).then(
+      (info) => (asyncMinionStatus = info),
+    );
+  };
+
+  const launchMicrocks = () => {
     console.log('Launch Microcks!');
     // ddClient.desktopUI.toast.success('Starting Microcks...');
 
@@ -330,9 +341,9 @@ const App = () => {
       { stream: buildStreamingOpts("async-minion") }
     );
     */
-  }
+  };
 
-  function buildStreamingOpts(container: string): any {
+  const buildStreamingOpts = (container: string): any => {
     return {
       onOutput(data: any) {
         if (data.stdout) {
@@ -349,14 +360,14 @@ const App = () => {
       },
       splitOutputLines: true,
     };
-  }
+  };
 
   return (
     <Container>
       <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }} my={1}>
         <Box alignContent="flex-start" textAlign="left" flexGrow={1}>
           <Typography sx={{ fontWeight: 'bolder' }} variant="h5">
-            Microcks Extension for Docker Desktop
+            Microcks for Docker Desktop
           </Typography>
           <Typography variant="body2">
             API Mocking and Testing for REST, GraphQL and AsyncAPI
