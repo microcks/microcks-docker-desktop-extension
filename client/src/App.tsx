@@ -26,6 +26,7 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 
 import {
+  initializeFileSystem,
   getExtensionConfig,
   getHome,
   writePropertiesFiles,
@@ -82,77 +83,33 @@ const App = () => {
   useEffect(() => {
     console.log('Loading Microcks Extension for Docker Desktop.');
 
-    // initializeFileSystem();
+    //initializeFileSystem();
+    initializeFileSystem().then(result => {
+      if (result) {
+        initializeExtension();  
+      }
+      // TODO: managed this low level error that prevent extension initialization.
+    });
+  });
 
-    // getHome().then(result => {
-    //   console.log("Home path: " + result);
-    //   if (result != null) {
-    //     result = result.replace(/\n/g, '');
-    //     appDir = result + "/.microcks-docker-desktop-extension";
-    //     console.log("Extension dir: " + appDir);
-    //   }
-    // });
-    // getExtensionConfig().then(result => {
-    //   config = result;
-    //   writePropertiesFiles(config);
-    // });
-
-    getContainerInfo(APP_CONTAINER).then((info) => setAppStatus(info));
-    // getContainerInfo(APP_CONTAINER).then(info => appStatus = info);
-    // getContainerInfo(POSTMAN_CONTAINER).then(info => postmanStatus = info);
-    // getContainerInfo(MONGO_CONTAINER).then(info => mongoStatus = info);
-
-    const getServices = async () => {
-      const result = await ddClient.docker.cli.exec('exec', [
-        APP_CONTAINER,
-        '/bin/curl',
-        '-s',
-        '-S',
-        'localhost:8080/api/services',
-      ]);
-      if (result?.stderr) {
-        return;
+  function initializeExtension() {
+    getHome().then(result => {
+      console.log("Home path: " + result);
+      if (result != null) {
+        result = result.replace(/\n/g, '');
+        appDir = result + "/.microcks-docker-desktop-extension";
+        console.log("Extension dir: " + appDir);
       }
       const svcs = result?.parseJsonObject() as Service[];
       console.log(svcs);
       setServices(svcs);
     };
 
-    getServices();
-  }, []);
-
-  useEffect(() => {
-    console.log('svc', services);
-  }, [services]);
-
-  async function initializeFileSystem() {
-    // const result = await ddClient.extension.host?.cli.exec(
-    //   'createvolumes.sh',
-    //   [],
-    //   {
-    //     stream: {
-    //       onOutput(
-    //         data:
-    //           | { stdout: string; stderr?: undefined }
-    //           | { stdout?: undefined; stderr: string },
-    //       ): void {
-    //         if (data.stdout) {
-    //           console.error('[data:stdout] ' + data.stdout);
-    //         } else {
-    //           console.error(data.stderr);
-    //         }
-    //       },
-    //       onError(error: any): void {
-    //         console.error('Filesystem intialization error: ' + error);
-    //       },
-    //       onClose(exitCode: number): void {
-    //         console.log(
-    //           'Filesystem initialization finished with exit code ' + exitCode,
-    //         );
-    //       },
-    //     },
-    //   },
-    // );
+    getContainerInfo(APP_CONTAINER).then(info => setAppStatus(info));
+    getContainerInfo(POSTMAN_CONTAINER).then(info => postmanStatus = info);
+    getContainerInfo(MONGO_CONTAINER).then(info => mongoStatus = info);
+    getContainerInfo(KAFKA_CONTAINER).then(info => kafkaStatus = info);
+    getContainerInfo(ASYNC_MINION_CONTAINER).then(info => asyncMinionStatus = info);
   }
 
   async function launchMicrocks() {
