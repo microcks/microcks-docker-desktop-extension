@@ -22,9 +22,11 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
-
+import SettingsIcon from '@mui/icons-material/Settings';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import {
   initializeFileSystem,
   getExtensionConfig,
@@ -39,6 +41,8 @@ import { EXTENSION_NETWORK } from './utils/constants';
 import Settings from './components/Settings';
 import Footer from './components/Footer';
 import './App.css';
+import { Extension } from '@docker/extension-api-client-types/dist/v1';
+import { IconButton } from '@mui/material';
 
 // const ddClient = createDockerDesktopClient();
 const client = createDockerDesktopClient();
@@ -63,20 +67,27 @@ const App = () => {
   const ddClient = useDockerDesktopClient();
 
   const [appStatus, setAppStatus] = useState({} as ContainerStatus);
+  const [postmanStatus, setPostmanStatus] = useState({} as ContainerStatus);
+  const [mongoStatus, setMongoStatus] = useState({} as ContainerStatus);
+
+  const [initialized, setInitialized] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
+
+  const [appDir, setAppDir] = useState('');
+  const [config, setConfig] = useState<ExtensionConfig>({} as ExtensionConfig);
 
   let APP_CONTAINER: string = 'microcks';
   let POSTMAN_CONTAINER: string = 'microcks-postman';
-  let MONGO_CONTAINER: string = 'mincrocks-mongodb';
+  let MONGO_CONTAINER: string = 'microcks-mongodb';
   let KAFKA_CONTAINER: string = 'microcks-kafka';
   let ASYNC_MINION_CONTAINER: string = 'microcks-async-minion';
 
-  let appDir: string;
-  let config: ExtensionConfig;
+  // let appDir: string;
+  // let config: ExtensionConfig;
 
   // let appStatus: ContainerStatus;
-  let postmanStatus: ContainerStatus;
-  let mongoStatus: ContainerStatus;
+  // let postmanStatus: ContainerStatus;
+  // let mongoStatus: ContainerStatus;
   let kafkaStatus: ContainerStatus;
   let asyncMinionStatus: ContainerStatus;
 
@@ -91,16 +102,23 @@ const App = () => {
     });
   }, []);
 
+  useEffect(() => {
+    if (appStatus.isRunning) {
+      setInitialized(true);
+    }
+  }, [appStatus]);
+
   const initializeExtension = () => {
     getHome().then((result) => {
       console.log('Home path: ' + result);
       if (result != null) {
         result = result.replace(/\n/g, '');
-        appDir =
+        const dir =
           result +
           (isWindows() ? '\\' : '/') +
           '.microcks-docker-desktop-extension';
-        console.log('Extension dir: ' + appDir);
+        console.log('Extension dir: ' + dir);
+        setAppDir(dir);
       }
       // const svcs = result?.parseJsonObject() as Service[];
       const svcs = result;
@@ -109,14 +127,15 @@ const App = () => {
     });
 
     getExtensionConfig().then((result) => {
-      config = result;
-      console.log('Config:', config);
+      const conf = result;
+      console.log('Config:', conf);
+      setConfig(conf);
       writePropertiesFiles(config);
     });
 
     getContainerInfo(APP_CONTAINER).then((info) => setAppStatus(info));
-    getContainerInfo(POSTMAN_CONTAINER).then((info) => (postmanStatus = info));
-    getContainerInfo(MONGO_CONTAINER).then((info) => (mongoStatus = info));
+    getContainerInfo(POSTMAN_CONTAINER).then((info) => setPostmanStatus(info));
+    getContainerInfo(MONGO_CONTAINER).then((info) => setMongoStatus(info));
     getContainerInfo(KAFKA_CONTAINER).then((info) => (kafkaStatus = info));
     getContainerInfo(ASYNC_MINION_CONTAINER).then(
       (info) => (asyncMinionStatus = info),
@@ -125,7 +144,7 @@ const App = () => {
 
   const launchMicrocks = () => {
     console.log('Launch Microcks!');
-    // ddClient.desktopUI.toast.success('Starting Microcks...');
+    ddClient.desktopUI.toast.success('Starting Microcks...');
 
     /*
     // Simple docker run command from docker-decompose ;-)
@@ -140,52 +159,52 @@ const App = () => {
       if (exists) {
         if (mongoStatus && !mongoStatus.isRunning) {
           if (!mongoStatus.exists) {
-            // const mongoRes = ddClient.docker.cli.exec(
-            //   'run',
-            //   [
-            //     '-d',
-            //     '--name',
-            //     MONGO_CONTAINER,
-            //     '--network',
-            //     EXTENSION_NETWORK,
-            //     '--hostname',
-            //     'mongo',
-            //     '-v',
-            //     appDir + '/data:/data/db',
-            //     'mongo:3.4.23',
-            //   ],
-            //   { stream: buildStreamingOpts(MONGO_CONTAINER) },
-            // );
+            const mongoRes = ddClient.docker.cli.exec(
+              'run',
+              [
+                '-d',
+                '--name',
+                MONGO_CONTAINER,
+                '--network',
+                EXTENSION_NETWORK,
+                '--hostname',
+                'mongo',
+                // '-v',
+                // appDir + (isWindows() ? '\\' : '/') + 'data:/data/db',
+                'mongo:3.4.23',
+              ],
+              { stream: buildStreamingOpts(MONGO_CONTAINER) },
+            );
             mongoStatus.exists = true;
           } else {
-            // const mongoRes = ddClient.docker.cli.exec('start', [
-            //   MONGO_CONTAINER,
-            // ]);
+            const mongoRes = ddClient.docker.cli.exec('start', [
+              MONGO_CONTAINER,
+            ]);
           }
           mongoStatus.isRunning = true;
         }
 
         if (postmanStatus && !postmanStatus.isRunning) {
           if (!postmanStatus.exists) {
-            // const postmanRes = ddClient.docker.cli.exec(
-            //   'run',
-            //   [
-            //     '-d',
-            //     '--name',
-            //     POSTMAN_CONTAINER,
-            //     '--network',
-            //     EXTENSION_NETWORK,
-            //     '--hostname',
-            //     'postman',
-            //     'quay.io/microcks/microcks-postman-runtime:latest',
-            //   ],
-            //   { stream: buildStreamingOpts(POSTMAN_CONTAINER) },
-            // );
+            const postmanRes = ddClient.docker.cli.exec(
+              'run',
+              [
+                '-d',
+                '--name',
+                POSTMAN_CONTAINER,
+                '--network',
+                EXTENSION_NETWORK,
+                '--hostname',
+                'postman',
+                'quay.io/microcks/microcks-postman-runtime:latest',
+              ],
+              { stream: buildStreamingOpts(POSTMAN_CONTAINER) },
+            );
             postmanStatus.exists = true;
           } else {
-            // const postmanRes = ddClient.docker.cli.exec('start', [
-            //   POSTMAN_CONTAINER,
-            // ]);
+            const postmanRes = ddClient.docker.cli.exec('start', [
+              POSTMAN_CONTAINER,
+            ]);
           }
           postmanStatus.isRunning = true;
         }
@@ -193,47 +212,47 @@ const App = () => {
         if (appStatus && !appStatus.isRunning) {
           if (!appStatus.exists) {
             console.log('Extension dir: ' + appDir);
-            // const appRes = ddClient.docker.cli.exec(
-            //   'run',
-            //   [
-            //     '-d',
-            //     '--name',
-            //     APP_CONTAINER,
-            //     '--network',
-            //     EXTENSION_NETWORK,
-            //     '--hostname',
-            //     'app',
-            //     '-v',
-            //     appDir + '/config:/deployments/config',
-            //     '-e',
-            //     'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
-            //     '-e',
-            //     'SPRING_PROFILES_ACTIVE=prod',
-            //     '-e',
-            //     'KEYCLOAK_ENABLED=false',
-            //     '-e',
-            //     'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
-            //     '-e',
-            //     'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
-            //     '-e',
-            //     'SPRING_DATA_MONGODB_DATABASE=microcks',
-            //     '-e',
-            //     'TEST_CALLBACK_URL=http://microcks:8080',
-            //     '-e',
-            //     'ASYNC_MINION_URL=http://microcks-async-minion:8081',
-            //     '-e',
-            //     'POSTMAN_RUNNER_URL=http://postman:3000',
-            //     '-p',
-            //     '8080:8080',
-            //     '-p',
-            //     '9090:9090',
-            //     'quay.io/microcks/microcks:latest',
-            //   ],
-            //   { stream: buildStreamingOpts(APP_CONTAINER) },
-            // );
+            const appRes = ddClient.docker.cli.exec(
+              'run',
+              [
+                '-d',
+                '--name',
+                APP_CONTAINER,
+                '--network',
+                EXTENSION_NETWORK,
+                '--hostname',
+                'app',
+                // '-v',
+                // appDir + '/config:/deployments/config',
+                '-e',
+                'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
+                '-e',
+                'SPRING_PROFILES_ACTIVE=prod',
+                '-e',
+                'KEYCLOAK_ENABLED=false',
+                '-e',
+                'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
+                '-e',
+                'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
+                '-e',
+                'SPRING_DATA_MONGODB_DATABASE=microcks',
+                '-e',
+                'TEST_CALLBACK_URL=http://microcks:8080',
+                '-e',
+                'ASYNC_MINION_URL=http://microcks-async-minion:8081',
+                '-e',
+                'POSTMAN_RUNNER_URL=http://postman:3000',
+                '-p',
+                '8080:8080',
+                '-p',
+                '9090:9090',
+                'quay.io/microcks/microcks:latest',
+              ],
+              { stream: buildStreamingOpts(APP_CONTAINER) },
+            );
             appStatus.exists = true;
           } else {
-            // const appRes = ddClient.docker.cli.exec('start', [APP_CONTAINER]);
+            const appRes = ddClient.docker.cli.exec('start', [APP_CONTAINER]);
           }
           appStatus.isRunning = true;
         }
@@ -343,6 +362,8 @@ const App = () => {
     */
   };
 
+  const stopMicrocks = () => {};
+
   const buildStreamingOpts = (container: string): any => {
     return {
       onOutput(data: any) {
@@ -364,29 +385,122 @@ const App = () => {
 
   return (
     <Container>
-      <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }} my={1}>
-        <Box alignContent="flex-start" textAlign="left" flexGrow={1}>
-          <Typography sx={{ fontWeight: 'bolder' }} variant="h5">
-            Microcks for Docker Desktop
-          </Typography>
-          <Typography variant="body2">
-            API Mocking and Testing for REST, GraphQL and AsyncAPI
-          </Typography>
-        </Box>
-        <Box m={2}>
-          {/* <Button variant="contained" onClick={() => {}}>
-            Launch Microcks
-          </Button> */}
-          {appStatus.isRunning ? (
+      {!initialized ? (
+        <Stack
+          sx={{
+            display: 'flex',
+            flexGrow: 1,
+            height: '100vh',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Box
+            m={2}
+            sx={{
+              width: 450,
+              maxWidth: { xs: 450, md: 350 },
+            }}
+            component="img"
+            src="assets/images/microcks-logo-blue-baseline.png"
+            alt="Microcks Logo"
+          />
+          <Paper
+            elevation={3}
+            sx={{
+              backgroundColor: 'lightgray',
+              margin: 2,
+              padding: 2,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'row',
+            }}
+          >
+            <Box
+              alignContent="center"
+              display="flex"
+              alignItems="center"
+              mx={1}
+            >
+              <RocketLaunchIcon />
+            </Box>
+            <Box
+              flexGrow={1}
+              alignContent="center"
+              display="flex"
+              alignItems="center"
+            >
+              <Typography>
+                Microcks is not running. First launch can take some time while
+                we're pullig the container images.
+              </Typography>
+            </Box>
+          </Paper>
+          <Box m={2}>
+            <Button variant="contained" size="large" onClick={launchMicrocks}>
+              Launch Microcks
+            </Button>
+          </Box>
+        </Stack>
+      ) : (
+        <Box
+          sx={{ display: 'flex', width: '100%', alignItems: 'center' }}
+          my={1}
+        >
+          <Box alignContent="flex-start" textAlign="left" flexGrow={1}>
+            <Typography sx={{ fontWeight: 'bolder' }} variant="h5">
+              Microcks for Docker Desktop
+            </Typography>
+            <Typography variant="body2">
+              API Mocking and Testing for REST, GraphQL and AsyncAPI
+            </Typography>
+          </Box>
+          <Box>
+            <IconButton>
+              <SettingsIcon />
+            </IconButton>
+          </Box>
+          <Box m={2}>
+            <Button variant="contained" color="error" onClick={stopMicrocks}>
+              Stop Microcks
+            </Button>
+            {/* {appStatus.isRunning ? (
             <Chip variant="filled" color="success" label="RUNNING" />
           ) : (
             <Chip variant="outlined" color="error" label="STOPPED" />
-          )}
+          )} */}
+          </Box>
         </Box>
-      </Box>
-      <Settings />
+      )}
+      <Paper
+        elevation={3}
+        sx={{
+          backgroundColor: 'lightgray',
+          padding: 2,
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'row',
+        }}
+      >
+        <Box alignContent="center" display="flex" alignItems="center" mx={1}>
+          <RocketLaunchIcon />
+        </Box>
+        <Box
+          flexGrow={1}
+          alignContent="center"
+          display="flex"
+          alignItems="center"
+        >
+          <Typography>
+            Microcks is not running. First launch can take some time while we're
+            pullig the container images.
+          </Typography>
+        </Box>
+      </Paper>
+
+      {/* <Settings /> */}
       <Footer />
-      <Box my={2}>
+      {/* <Box my={2}>
         <Typography variant="h3">Services</Typography>
         {services.map((service) => (
           <Stack>
@@ -399,7 +513,7 @@ const App = () => {
             <Typography>{service.version}</Typography>
           </Stack>
         ))}
-      </Box>
+      </Box> */}
     </Container>
   );
 };
