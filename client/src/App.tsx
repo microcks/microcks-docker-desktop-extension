@@ -104,8 +104,10 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    console.log(appStatus);
+    setInitialized(appStatus.isRunning);
     if (appStatus.isRunning) {
-      setInitialized(true);
+      ddClient.desktopUI.toast.success('Microcks is running');
     }
   }, [appStatus]);
 
@@ -145,7 +147,6 @@ const App = () => {
 
   const launchMicrocks = () => {
     console.log('Launch Microcks!');
-    ddClient.desktopUI.toast.success('Starting Microcks...');
 
     /*
     // Simple docker run command from docker-decompose ;-)
@@ -159,7 +160,9 @@ const App = () => {
     ensureNetworkExists().then((exists) => {
       if (exists) {
         if (mongoStatus && !mongoStatus.isRunning) {
+          const mStatus = { ...mongoStatus };
           if (!mongoStatus.exists) {
+            console.log('Creating ', MONGO_CONTAINER);
             const mongoRes = ddClient.docker.cli.exec(
               'run',
               [
@@ -176,17 +179,21 @@ const App = () => {
               ],
               { stream: buildStreamingOpts(MONGO_CONTAINER) },
             );
-            mongoStatus.exists = true;
+            mStatus.exists = true;
           } else {
+            console.log('Starting ', MONGO_CONTAINER);
             const mongoRes = ddClient.docker.cli.exec('start', [
               MONGO_CONTAINER,
             ]);
           }
-          mongoStatus.isRunning = true;
+          mStatus.isRunning = true;
+          setMongoStatus(mStatus);
         }
 
         if (postmanStatus && !postmanStatus.isRunning) {
+          const pStatus = { ...postmanStatus };
           if (!postmanStatus.exists) {
+            console.log('Creating ', POSTMAN_CONTAINER);
             const postmanRes = ddClient.docker.cli.exec(
               'run',
               [
@@ -201,18 +208,22 @@ const App = () => {
               ],
               { stream: buildStreamingOpts(POSTMAN_CONTAINER) },
             );
-            postmanStatus.exists = true;
+            pStatus.exists = true;
           } else {
+            console.log('Starting ', POSTMAN_CONTAINER);
             const postmanRes = ddClient.docker.cli.exec('start', [
               POSTMAN_CONTAINER,
             ]);
           }
-          postmanStatus.isRunning = true;
+          pStatus.isRunning = true;
+          setPostmanStatus(pStatus);
         }
 
         if (appStatus && !appStatus.isRunning) {
+          const aStatus = { ...appStatus };
           if (!appStatus.exists) {
             console.log('Extension dir: ' + appDir);
+            console.log('Creating ', APP_CONTAINER);
             const appRes = ddClient.docker.cli.exec(
               'run',
               [
@@ -251,11 +262,12 @@ const App = () => {
               ],
               { stream: buildStreamingOpts(APP_CONTAINER) },
             );
-            appStatus.exists = true;
+            aStatus.exists = true;
+            aStatus.isRunning = true;
+            setAppStatus(aStatus);
           } else {
-            const appRes = ddClient.docker.cli.exec('start', [APP_CONTAINER]);
+            startContainer(APP_CONTAINER);
           }
-          appStatus.isRunning = true;
         }
 
         if (config.asyncEnabled) {
@@ -329,6 +341,21 @@ const App = () => {
       }
     });
 
+    const startContainer = async (container: string) => {
+      console.log('Starting ', container);
+      const result = await ddClient.docker.cli.exec('start', [container]);
+      if (!result.code) {
+        switch (container) {
+          case APP_CONTAINER:
+            setAppStatus({ ...appStatus, isRunning: true });
+            break;
+
+          default:
+            break;
+        }
+      }
+    };
+
     /*
     const kafkaRes = await ddClient.docker.cli.exec("run", [
       "-d", "--name", "kafka",
@@ -363,7 +390,20 @@ const App = () => {
     */
   };
 
-  const stopMicrocks = () => {};
+  const stopMicrocks = async () => {
+    console.log('Stopping Microcks');
+    ddClient.desktopUI.toast.error('Stopping Microcks...');
+    const result = await ddClient.docker.cli.exec('stop', [
+      MONGO_CONTAINER,
+      POSTMAN_CONTAINER,
+      APP_CONTAINER,
+    ]);
+    if (!result.code) {
+      setAppStatus({ ...appStatus, isRunning: false });
+      setPostmanStatus({ ...postmanStatus, isRunning: false });
+      setMongoStatus({ ...mongoStatus, isRunning: false });
+    }
+  };
 
   const buildStreamingOpts = (container: string): any => {
     return {
@@ -407,9 +447,9 @@ const App = () => {
             alt="Microcks Logo"
           />
           <Paper
-            elevation={3}
+            elevation={2}
             sx={{
-              backgroundColor: 'lightgray',
+              backgroundColor: '#dadada',
               margin: 2,
               padding: 2,
               width: '100%',
@@ -417,6 +457,9 @@ const App = () => {
               flexDirection: 'row',
             }}
           >
+            {!appStatus.isRunning && (
+              <Chip variant="outlined" color="error" label="STOPPED" />
+            )}
             <Box
               alignContent="center"
               display="flex"
@@ -424,6 +467,13 @@ const App = () => {
               mx={1}
             >
               <RocketLaunchIcon />
+            </Box>
+            <Box
+              flexGrow={1}
+              alignContent="center"
+              display="flex"
+              alignItems="center"
+            >
               <Typography>
                 Microcks is not running. First launch can take some time while
                 we're pullig the container images.
@@ -451,7 +501,7 @@ const App = () => {
             <Typography sx={{ fontWeight: 'bolder' }} variant="h5">
               Microcks for Docker Desktop
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="subtitle1">
               API Mocking and Testing for REST, GraphQL and AsyncAPI
             </Typography>
           </Box>
@@ -468,9 +518,9 @@ const App = () => {
         </Box>
       )}
       <Paper
-        elevation={3}
+        elevation={2}
         sx={{
-          backgroundColor: 'lightgray',
+          backgroundColor: '#dadada',
           padding: 2,
           width: '100%',
           display: 'flex',
@@ -489,15 +539,16 @@ const App = () => {
           display="flex"
           alignItems="center"
         >
-          <Typography>
+          <Typography variant="subtitle1">
             Microcks is running. To access the UI navigate to:{' '}
             <Link
               onClick={() =>
-                ddClient.host.openExternal('http://localhost:8180')
+                ddClient.host.openExternal('http://localhost:8080')
               }
+              variant="subtitle1"
               component="button"
             >
-              http://localhost:8180
+              http://localhost:8080
             </Link>
           </Typography>
         </Box>
