@@ -27,6 +27,7 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import SettingsIcon from '@mui/icons-material/Settings';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import {
   initializeFileSystem,
   getExtensionConfig,
@@ -42,7 +43,7 @@ import Settings from './components/Settings';
 import Footer from './components/Footer';
 import './App.css';
 import { Extension } from '@docker/extension-api-client-types/dist/v1';
-import { IconButton } from '@mui/material';
+import { IconButton, Link } from '@mui/material';
 
 // const ddClient = createDockerDesktopClient();
 const client = createDockerDesktopClient();
@@ -423,18 +424,17 @@ const App = () => {
               mx={1}
             >
               <RocketLaunchIcon />
+              <Typography>
+                Microcks is not running. First launch can take some time while
+                we're pullig the container images.
+              </Typography>
             </Box>
             <Box
               flexGrow={1}
               alignContent="center"
               display="flex"
               alignItems="center"
-            >
-              <Typography>
-                Microcks is not running. First launch can take some time while
-                we're pullig the container images.
-              </Typography>
-            </Box>
+            ></Box>
           </Paper>
           <Box m={2}>
             <Button variant="contained" size="large" onClick={launchMicrocks}>
@@ -464,11 +464,6 @@ const App = () => {
             <Button variant="contained" color="error" onClick={stopMicrocks}>
               Stop Microcks
             </Button>
-            {/* {appStatus.isRunning ? (
-            <Chip variant="filled" color="success" label="RUNNING" />
-          ) : (
-            <Chip variant="outlined" color="error" label="STOPPED" />
-          )} */}
           </Box>
         </Box>
       )}
@@ -482,8 +477,11 @@ const App = () => {
           flexDirection: 'row',
         }}
       >
+        {appStatus.isRunning && (
+          <Chip variant="filled" color="success" label="RUNNING" />
+        )}
         <Box alignContent="center" display="flex" alignItems="center" mx={1}>
-          <RocketLaunchIcon />
+          <DoneOutlinedIcon />
         </Box>
         <Box
           flexGrow={1}
@@ -492,8 +490,15 @@ const App = () => {
           alignItems="center"
         >
           <Typography>
-            Microcks is not running. First launch can take some time while we're
-            pullig the container images.
+            Microcks is running. To access the UI navigate to:{' '}
+            <Link
+              onClick={() =>
+                ddClient.host.openExternal('http://localhost:8180')
+              }
+              component="button"
+            >
+              http://localhost:8180
+            </Link>
           </Typography>
         </Box>
       </Paper>
@@ -501,7 +506,7 @@ const App = () => {
       {/* <Settings /> */}
       <Footer />
       {/* <Box my={2}>
-        <Typography variant="h3">Services</Typography>
+        <Typography variant="h3">APIs &amp; Services</Typography>
         {services.map((service) => (
           <Stack>
             <Typography>
