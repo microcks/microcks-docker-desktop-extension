@@ -28,6 +28,10 @@ import Stack from '@mui/material/Stack';
 import SettingsIcon from '@mui/icons-material/Settings';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
 import {
   initializeFileSystem,
   getExtensionConfig,
@@ -43,7 +47,6 @@ import Settings from './components/Settings';
 import Footer from './components/Footer';
 import './App.css';
 import { Extension } from '@docker/extension-api-client-types/dist/v1';
-import { IconButton, Link } from '@mui/material';
 
 // const ddClient = createDockerDesktopClient();
 const client = createDockerDesktopClient();
@@ -66,6 +69,8 @@ type Service = {
 
 const App = () => {
   const ddClient = useDockerDesktopClient();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [appStatus, setAppStatus] = useState({} as ContainerStatus);
   const [postmanStatus, setPostmanStatus] = useState({} as ContainerStatus);
@@ -109,6 +114,7 @@ const App = () => {
     if (appStatus.isRunning) {
       ddClient.desktopUI.toast.success('Microcks is running');
     }
+    setIsLoading(false);
   }, [appStatus]);
 
   const initializeExtension = () => {
@@ -147,6 +153,8 @@ const App = () => {
 
   const launchMicrocks = () => {
     console.log('Launch Microcks!');
+
+    setIsLoading(true);
 
     /*
     // Simple docker run command from docker-decompose ;-)
@@ -392,7 +400,8 @@ const App = () => {
 
   const stopMicrocks = async () => {
     console.log('Stopping Microcks');
-    ddClient.desktopUI.toast.error('Stopping Microcks...');
+    setIsLoading(true);
+    ddClient.desktopUI.toast.success('Stopping Microcks...');
     const result = await ddClient.docker.cli.exec('stop', [
       MONGO_CONTAINER,
       POSTMAN_CONTAINER,
@@ -570,6 +579,12 @@ const App = () => {
           </Stack>
         ))}
       </Box> */}
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={isLoading}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </Container>
   );
 };
