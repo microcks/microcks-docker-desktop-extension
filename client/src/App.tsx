@@ -71,6 +71,7 @@ const App = () => {
   const ddClient = useDockerDesktopClient();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isSettingsDialog, setIsSettingsDialog] = useState(false);
 
   const [appStatus, setAppStatus] = useState({} as ContainerStatus);
   const [postmanStatus, setPostmanStatus] = useState({} as ContainerStatus);
@@ -78,6 +79,8 @@ const App = () => {
 
   const [initialized, setInitialized] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
+
+  const [portOffset, setPortOffset] = useState(0);
 
   const [appDir, setAppDir] = useState('');
   const [config, setConfig] = useState<ExtensionConfig>({} as ExtensionConfig);
@@ -433,6 +436,11 @@ const App = () => {
     };
   };
 
+  const handleOpenSettings = () => {
+    console.log('Opening settings dialog.');
+    setIsSettingsDialog(true);
+  };
+
   return (
     <Container>
       {!initialized ? (
@@ -515,7 +523,7 @@ const App = () => {
             </Typography>
           </Box>
           <Box>
-            <IconButton>
+            <IconButton onClick={handleOpenSettings}>
               <SettingsIcon />
             </IconButton>
           </Box>
@@ -552,18 +560,19 @@ const App = () => {
             Microcks is running. To access the UI navigate to:{' '}
             <Link
               onClick={() =>
-                ddClient.host.openExternal('http://localhost:8080')
+                ddClient.host.openExternal(
+                  `http://localhost:${8080 + portOffset}`,
+                )
               }
               variant="subtitle1"
               component="button"
             >
-              http://localhost:8080
+              http://localhost:{8080 + portOffset}
             </Link>
           </Typography>
         </Box>
       </Paper>
 
-      {/* <Settings /> */}
       <Footer />
       {/* <Box my={2}>
         <Typography variant="h3">APIs &amp; Services</Typography>
@@ -579,6 +588,13 @@ const App = () => {
           </Stack>
         ))}
       </Box> */}
+      <Settings
+        portOffset={portOffset}
+        isDialogOpen={isSettingsDialog}
+        handleCloseDialog={() => {
+          setIsSettingsDialog(!isSettingsDialog);
+        }}
+      />
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={isLoading}
