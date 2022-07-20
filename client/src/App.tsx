@@ -76,6 +76,10 @@ const App = () => {
   const [appStatus, setAppStatus] = useState({} as ContainerStatus);
   const [postmanStatus, setPostmanStatus] = useState({} as ContainerStatus);
   const [mongoStatus, setMongoStatus] = useState({} as ContainerStatus);
+  const [kafkaStatus, setKafkaStatus] = useState({} as ContainerStatus);
+  const [asyncMinionStatus, setAsyncMinionStatus] = useState(
+    {} as ContainerStatus,
+  );
 
   const [initialized, setInitialized] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
@@ -83,20 +87,11 @@ const App = () => {
   const [appDir, setAppDir] = useState('');
   const [config, setConfig] = useState<ExtensionConfig>({} as ExtensionConfig);
 
-  let APP_CONTAINER: string = 'microcks';
-  let POSTMAN_CONTAINER: string = 'microcks-postman';
-  let MONGO_CONTAINER: string = 'microcks-mongodb';
-  let KAFKA_CONTAINER: string = 'microcks-kafka';
-  let ASYNC_MINION_CONTAINER: string = 'microcks-async-minion';
-
-  // let appDir: string;
-  // let config: ExtensionConfig;
-
-  // let appStatus: ContainerStatus;
-  // let postmanStatus: ContainerStatus;
-  // let mongoStatus: ContainerStatus;
-  let kafkaStatus: ContainerStatus;
-  let asyncMinionStatus: ContainerStatus;
+  const APP_CONTAINER: string = 'microcks';
+  const POSTMAN_CONTAINER: string = 'microcks-postman';
+  const MONGO_CONTAINER: string = 'microcks-mongodb';
+  const KAFKA_CONTAINER: string = 'microcks-kafka';
+  const ASYNC_MINION_CONTAINER: string = 'microcks-async-minion';
 
   useEffect(() => {
     console.log('Loading Microcks Extension for Docker Desktop.');
@@ -112,7 +107,7 @@ const App = () => {
   useEffect(() => {
     console.log(appStatus);
     setInitialized(appStatus.isRunning);
-    if (appStatus.isRunning) {
+    if (appStatus.isRunning && isLoading) {
       ddClient.desktopUI.toast.success('Microcks is running');
     }
     setIsLoading(false);
@@ -122,7 +117,7 @@ const App = () => {
     getHome().then((result) => {
       console.log('Home path: ' + result);
       if (result != null) {
-        result = result.replace(/\n/g, '');
+        result = result.replace(/\n/g, '').replace(/\r/g, '');
         const dir =
           result +
           (isWindows() ? '\\' : '/') +
@@ -146,9 +141,9 @@ const App = () => {
     getContainerInfo(APP_CONTAINER).then((info) => setAppStatus(info));
     getContainerInfo(POSTMAN_CONTAINER).then((info) => setPostmanStatus(info));
     getContainerInfo(MONGO_CONTAINER).then((info) => setMongoStatus(info));
-    getContainerInfo(KAFKA_CONTAINER).then((info) => (kafkaStatus = info));
-    getContainerInfo(ASYNC_MINION_CONTAINER).then(
-      (info) => (asyncMinionStatus = info),
+    getContainerInfo(KAFKA_CONTAINER).then((info) => setKafkaStatus(info));
+    getContainerInfo(ASYNC_MINION_CONTAINER).then((info) =>
+      setAsyncMinionStatus(info),
     );
   };
 
@@ -168,6 +163,10 @@ const App = () => {
 
     ensureNetworkExists().then((exists) => {
       if (exists) {
+        const volumeDir = isWindows()
+          ? `//${appDir.replace(/\\/g, '/').replace('C:', 'c')}`
+          : appDir;
+        console.log('vol', volumeDir);
         if (mongoStatus && !mongoStatus.isRunning) {
           const mStatus = { ...mongoStatus };
           if (!mongoStatus.exists) {
@@ -182,8 +181,8 @@ const App = () => {
                 EXTENSION_NETWORK,
                 '--hostname',
                 'mongo',
-                // '-v',
-                // appDir + (isWindows() ? '\\' : '/') + 'data:/data/db',
+                '-v',
+                volumeDir + '/data:/data/db',
                 'mongo:3.4.23',
               ],
               { stream: buildStreamingOpts(MONGO_CONTAINER) },
@@ -243,8 +242,8 @@ const App = () => {
                 EXTENSION_NETWORK,
                 '--hostname',
                 'app',
-                // '-v',
-                // appDir + '/config:/deployments/config',
+                '-v',
+                volumeDir + '/config:/deployments/config',
                 '-e',
                 'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
                 '-e',
