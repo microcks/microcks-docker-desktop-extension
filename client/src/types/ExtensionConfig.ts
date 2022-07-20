@@ -17,6 +17,6 @@
  * under the License.
  */
 export class ExtensionConfig {
-  asyncEnabled?: boolean = false
-  portOffset?: number;
+  asyncEnabled: boolean = false;
+  portOffset: number = 0;
 }

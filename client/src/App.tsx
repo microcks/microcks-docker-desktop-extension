@@ -80,8 +80,6 @@ const App = () => {
   const [initialized, setInitialized] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
 
-  const [portOffset, setPortOffset] = useState(0);
-
   const [appDir, setAppDir] = useState('');
   const [config, setConfig] = useState<ExtensionConfig>({} as ExtensionConfig);
 
@@ -561,13 +559,13 @@ const App = () => {
             <Link
               onClick={() =>
                 ddClient.host.openExternal(
-                  `http://localhost:${8080 + portOffset}`,
+                  `http://localhost:${8080 + config.portOffset}`,
                 )
               }
               variant="subtitle1"
               component="button"
             >
-              http://localhost:{8080 + portOffset}
+              http://localhost:{8080 + config.portOffset}
             </Link>
           </Typography>
         </Box>
@@ -589,10 +587,13 @@ const App = () => {
         ))}
       </Box> */}
       <Settings
-        portOffset={portOffset}
+        config={config}
         isDialogOpen={isSettingsDialog}
-        handleCloseDialog={() => {
+        handleCloseDialog={(config: ExtensionConfig | undefined | null) => {
           setIsSettingsDialog(!isSettingsDialog);
+          if (config) {
+            setConfig(config);
+          }
         }}
       />
       <Backdrop
