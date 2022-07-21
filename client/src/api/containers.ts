@@ -18,41 +18,56 @@
  */
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 
-import { ContainerStatus } from "../types/ContainerStatus";
+import { ContainerStatus } from '../types/ContainerStatus';
 import { throwErrorAsString } from './utils';
 
 const ddClient = createDockerDesktopClient();
 
 /** */
-export async function getContainerInfo(container: string): Promise<ContainerStatus> {
+export async function getContainerInfo(
+  container: string,
+): Promise<ContainerStatus> {
   console.info('Looking for ' + container + ' container info.');
-  
-  let existFlag: boolean = false;
-  let runningFlag: boolean = false;
 
-  let containerInfo;
+  const info = new ContainerStatus(false, false);
+
   try {
-    containerInfo = await ddClient.docker.cli.exec("inspect", [container]);
+    const containerInfo = await ddClient.docker.cli.exec('inspect', [
+      container,
+    ]);
 
     var infoObj = containerInfo.parseJsonObject();
     if (infoObj != null && infoObj[0] != null) {
-      existFlag = true;
+      info.exists = true;
       var containerObj = infoObj[0];
       if (containerObj.State?.Status === 'running') {
-        runningFlag = true;
+        info.isRunning = true;
+      }
+      console.log('bindings', containerObj.HostConfig?.PortBindings);
+      if (Object.keys(containerObj.HostConfig?.PortBindings).length) {
+        info.mappedPort =
+          containerObj.HostConfig?.PortBindings?.['8080/tcp'][0]?.HostPort;
       }
     } else {
-      existFlag = false;
-    }  
+      info.exists = false;
+    }
   } catch (e: any) {
-    if (e.stderr !== undefined && (e.stderr.includes('No such object'))) {
-      console.info(container + ' info - exists: ' + existFlag + ', is running: ' + runningFlag);
+    if (e.stderr !== undefined && e.stderr.includes('No such object')) {
+      console.info(
+        container +
+          ' info - exists: ' +
+          info.exists +
+          ', is running: ' +
+          info.isRunning,
+      );
       return new ContainerStatus(false, false);
     } else {
       throwErrorAsString(e);
     }
   }
-  
-  console.info(container + ' info - exists: ' + existFlag + ', is running: ' + runningFlag);
-  return new ContainerStatus(existFlag, runningFlag);
+
+  console.info(
+    `${container} info - exists: ${info.exists}, is running: ${info.isRunning}, port: ${info.mappedPort}`,
+  );
+  return info;
 }

@@ -17,11 +17,13 @@
  * under the License.
  */
 export class ContainerStatus {
-  exists: boolean = false
-  isRunning: boolean = false
+  exists: boolean = false;
+  isRunning: boolean = false;
+  mappedPort: number = 0;
 
-  constructor (exists: boolean, isRunning: boolean) {
+  constructor(exists: boolean, isRunning: boolean, mappedPort?: number) {
     this.exists = exists;
     this.isRunning = isRunning;
+    this.mappedPort = mappedPort ? mappedPort : 0;
   }
 }

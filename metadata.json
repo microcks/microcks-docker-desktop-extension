@@ -3,66 +3,46 @@
   "ui": {
     "dashboard-tab": {
       "title": "Microcks",
-      "root": "ui",
+      "root": "/ui",
       "src": "index.html"
     }
   },
   "host": {
     "binaries": [
       {
-        "darwin": [
-          { "path": "/host/unix/createvolumes.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/createvolumes.sh" }
-        ],
-        "windows": [
-          { "path": "/host/windows/createvolumes.bat" }
-        ]
+        "darwin": [{ "path": "/host/unix/createvolumes.sh" }],
+        "linux": [{ "path": "/host/unix/createvolumes.sh" }],
+        "windows": [{ "path": "/host/windows/createvolumes.bat" }]
       },
       {
-        "darwin": [
-          { "path": "/host/unix/readconf.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/readconf.sh" }
-        ],
-        "windows": [
-          { "path": "/host/windows/readconf.bat" }
-        ]
+        "darwin": [{ "path": "/host/unix/readconf.sh" }],
+        "linux": [{ "path": "/host/unix/readconf.sh" }],
+        "windows": [{ "path": "/host/windows/readconf.bat" }]
       },
       {
-        "darwin": [
-          { "path": "/host/unix/readhome.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/readhome.sh" }
-        ],
-        "windows": [
-          { "path": "/host/windows/readhome.bat" }
-        ]
+        "darwin": [{ "path": "/host/unix/readhome.sh" }],
+        "linux": [{ "path": "/host/unix/readhome.sh" }],
+        "windows": [{ "path": "/host/windows/readhome.bat" }]
       },
       {
-        "darwin": [
-          { "path": "/host/unix/writeconf.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/writeconf.sh" }
-        ],
-        "windows": [
-          { "path": "/host/windows/writeconf.bat" }
-        ]
+        "darwin": [{ "path": "/host/unix/writeconf.sh" }],
+        "linux": [{ "path": "/host/unix/writeconf.sh" }],
+        "windows": [{ "path": "/host/windows/writeconf.bat" }]
       },
       {
-        "darwin": [
-          { "path": "/host/unix/writeproperties.sh" }
-        ],
-        "linux": [
-          { "path": "/host/unix/writeproperties.sh" }
-        ],
-        "windows": [
-          { "path": "/host/windows/writeproperties.bat" }
-        ]
+        "darwin": [{ "path": "/host/unix/writeproperties.sh" }],
+        "linux": [{ "path": "/host/unix/writeproperties.sh" }],
+        "windows": [{ "path": "/host/windows/writeproperties.bat" }]
+      },
+      {
+        "darwin": [{ "path": "/host/templates/application.properties" }],
+        "linux": [{ "path": "/host/templates/application.properties" }],
+        "windows": [{ "path": "/host/templates/application.properties" }]
+      },
+      {
+        "darwin": [{ "path": "/host/templates/features.properties" }],
+        "linux": [{ "path": "/host/templates/features.properties" }],
+        "windows": [{ "path": "/host/templates/features.properties" }]
       }
     ]
   }

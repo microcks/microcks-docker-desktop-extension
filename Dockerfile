@@ -12,18 +12,19 @@ RUN --mount=type=cache,target=/usr/local/share/.cache/yarn-${TARGETARCH} yarn bu
 
 
 FROM debian:bullseye-slim
-LABEL org.opencontainers.image.title="Microcks for Docker Desktop" \
-    org.opencontainers.image.description="Easily run Microcks from Docker Desktop" \
-    org.opencontainers.image.vendor="MicrocksIO" \
+LABEL org.opencontainers.image.title="Microcks" \
+    org.opencontainers.image.description="Easily mock and test REST, GraphQL and Async APIs." \
+    org.opencontainers.image.vendor="Microcks" \
     com.docker.desktop.extension.api.version=">= 0.2.3" \
     com.docker.desktop.extension.icon="https://microcks.io/images/microcks-logo-blue.png" \
     com.docker.extension.screenshots="[]" \
     com.docker.extension.detailed-description="<h1>Description</h1><p>This is a sample extension that contains a ReactJS application.</p>" \
     com.docker.extension.publisher-url="https://www.microcks.io" \
-    com.docker.extension.additional-urls="[https://github.com/microcks/microcks-docker-desktop-extension]" \
+    com.docker.extension.additional-urls="[]" \
     com.docker.extension.changelog=""
 
 COPY --from=client-builder /app/client/dist ui
+COPY docker-compose.yaml .
 COPY metadata.json .
 COPY host ./host
 COPY microcks.svg .
