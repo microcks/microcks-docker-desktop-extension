@@ -18,12 +18,14 @@ import { ExtensionConfig } from '../types/ExtensionConfig';
 
 type Props = {
   config: ExtensionConfig;
+  isRunning?: boolean;
   isDialogOpen: boolean;
   handleCloseDialog: (newConfig: ExtensionConfig | undefined | null) => void;
 };
 
 const Settings: React.FC<Props> = ({
   isDialogOpen,
+  isRunning = true,
   handleCloseDialog,
   config,
 }) => {
@@ -115,7 +117,7 @@ const Settings: React.FC<Props> = ({
             })
           }
         >
-          {'Apply & Restart'}
+          {isRunning ? 'Apply & Restart' : 'Apply'}
         </Button>
       </DialogActions>
     </Dialog>

@@ -37,6 +37,7 @@ import {
   getExtensionConfig,
   getHome,
   writePropertiesFiles,
+  writeExtensionConfig,
 } from './api/config';
 import { ExtensionConfig } from './types/ExtensionConfig';
 import { ContainerStatus } from './types/ContainerStatus';
@@ -147,7 +148,7 @@ const App = () => {
     );
   };
 
-  const launchMicrocks = () => {
+  const launchMicrocks = async () => {
     console.log('Launch Microcks!');
 
     setIsLoading(true);
@@ -161,12 +162,14 @@ const App = () => {
     docker run -d --name "async-minion" -e "QUARKUS_PROFILE=docker-compose" -p "8081:8081" --restart "on-failure" -v "./config:/deployments/config" "quay.io/microcks/microcks-async-minion:latest"
     */
 
-    ensureNetworkExists().then((exists) => {
+    ensureNetworkExists().then(async (exists) => {
+      console.log('network result', exists);
       if (exists) {
         const volumeDir = isWindows()
           ? `//${appDir.replace(/\\/g, '/').replace('C:', 'c')}`
           : appDir;
         console.log('vol', volumeDir);
+        console.log('mongostatus', mongoStatus);
         if (mongoStatus && !mongoStatus.isRunning) {
           const mStatus = { ...mongoStatus };
           if (!mongoStatus.exists) {
@@ -189,15 +192,13 @@ const App = () => {
             );
             mStatus.exists = true;
           } else {
-            console.log('Starting ', MONGO_CONTAINER);
-            const mongoRes = ddClient.docker.cli.exec('start', [
-              MONGO_CONTAINER,
-            ]);
+            startContainer(MONGO_CONTAINER);
           }
           mStatus.isRunning = true;
           setMongoStatus(mStatus);
         }
 
+        console.log('postmanstatus', postmanStatus);
         if (postmanStatus && !postmanStatus.isRunning) {
           const pStatus = { ...postmanStatus };
           if (!postmanStatus.exists) {
@@ -218,64 +219,63 @@ const App = () => {
             );
             pStatus.exists = true;
           } else {
-            console.log('Starting ', POSTMAN_CONTAINER);
-            const postmanRes = ddClient.docker.cli.exec('start', [
-              POSTMAN_CONTAINER,
-            ]);
+            startContainer(POSTMAN_CONTAINER);
           }
           pStatus.isRunning = true;
           setPostmanStatus(pStatus);
         }
 
+        console.log('appstatus', appStatus);
         if (appStatus && !appStatus.isRunning) {
           const aStatus = { ...appStatus };
+          const params = [
+            '-d',
+            '--name',
+            APP_CONTAINER,
+            '--network',
+            EXTENSION_NETWORK,
+            '--hostname',
+            'app',
+            '-v',
+            volumeDir + '/config:/deployments/config',
+            '-e',
+            'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
+            '-e',
+            'SPRING_PROFILES_ACTIVE=prod',
+            '-e',
+            'KEYCLOAK_ENABLED=false',
+            '-e',
+            'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
+            '-e',
+            'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
+            '-e',
+            'SPRING_DATA_MONGODB_DATABASE=microcks',
+            '-e',
+            'TEST_CALLBACK_URL=http://microcks:8080',
+            '-e',
+            'ASYNC_MINION_URL=http://microcks-async-minion:8081',
+            '-e',
+            'POSTMAN_RUNNER_URL=http://postman:3000',
+            '-p',
+            `${8080 + config.portOffset}:8080`,
+            '-p',
+            `${9090 + config.portOffset}:9090`,
+            'quay.io/microcks/microcks:latest',
+          ];
           if (!appStatus.exists) {
-            console.log('Extension dir: ' + appDir);
             console.log('Creating ', APP_CONTAINER);
-            const appRes = ddClient.docker.cli.exec(
-              'run',
-              [
-                '-d',
-                '--name',
-                APP_CONTAINER,
-                '--network',
-                EXTENSION_NETWORK,
-                '--hostname',
-                'app',
-                '-v',
-                volumeDir + '/config:/deployments/config',
-                '-e',
-                'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
-                '-e',
-                'SPRING_PROFILES_ACTIVE=prod',
-                '-e',
-                'KEYCLOAK_ENABLED=false',
-                '-e',
-                'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
-                '-e',
-                'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
-                '-e',
-                'SPRING_DATA_MONGODB_DATABASE=microcks',
-                '-e',
-                'TEST_CALLBACK_URL=http://microcks:8080',
-                '-e',
-                'ASYNC_MINION_URL=http://microcks-async-minion:8081',
-                '-e',
-                'POSTMAN_RUNNER_URL=http://postman:3000',
-                '-p',
-                '8080:8080',
-                '-p',
-                '9090:9090',
-                'quay.io/microcks/microcks:latest',
-              ],
-              { stream: buildStreamingOpts(APP_CONTAINER) },
-            );
+            const result = await runContainer(APP_CONTAINER, params);
             aStatus.exists = true;
-            aStatus.isRunning = true;
-            setAppStatus(aStatus);
           } else {
-            startContainer(APP_CONTAINER);
+            if (appStatus.mappedPort != 8080 + config.portOffset) {
+              const removeRes = await removeContainer(APP_CONTAINER);
+              const runRes = await runContainer(APP_CONTAINER, params);
+            } else {
+              startContainer(APP_CONTAINER);
+            }
           }
+          aStatus.isRunning = true;
+          setAppStatus(aStatus);
         }
 
         if (config.asyncEnabled) {
@@ -349,21 +349,6 @@ const App = () => {
       }
     });
 
-    const startContainer = async (container: string) => {
-      console.log('Starting ', container);
-      const result = await ddClient.docker.cli.exec('start', [container]);
-      if (!result.code) {
-        switch (container) {
-          case APP_CONTAINER:
-            setAppStatus({ ...appStatus, isRunning: true });
-            break;
-
-          default:
-            break;
-        }
-      }
-    };
-
     /*
     const kafkaRes = await ddClient.docker.cli.exec("run", [
       "-d", "--name", "kafka",
@@ -398,19 +383,118 @@ const App = () => {
     */
   };
 
-  const stopMicrocks = async () => {
+  const runContainer = async (container: string, params: string[]) => {
+    const appRes = ddClient.docker.cli.exec('run', params, {
+      stream: buildStreamingOpts(APP_CONTAINER),
+    });
+  };
+
+  const removeContainer = async (container: string, trigger?: boolean) => {
+    console.log('Deleting ', container);
+    const result = await ddClient.docker.cli.exec('rm', ['-v', container]);
+    if (!result.code && trigger) {
+      switch (container) {
+        case APP_CONTAINER:
+          setAppStatus({ ...appStatus, exists: false });
+          break;
+        case MONGO_CONTAINER:
+          setMongoStatus({ ...mongoStatus, exists: false });
+          break;
+        case POSTMAN_CONTAINER:
+          setPostmanStatus({ ...postmanStatus, exists: false });
+          break;
+
+        default:
+          break;
+      }
+    }
+    return result;
+  };
+
+  const startContainer = async (container: string) => {
+    console.log('Starting ', container);
+    const result = await ddClient.docker.cli.exec('start', [container]);
+    if (!result.code) {
+      switch (container) {
+        case APP_CONTAINER:
+          setAppStatus({ ...appStatus, isRunning: true });
+          break;
+        case MONGO_CONTAINER:
+          setMongoStatus({ ...mongoStatus, isRunning: true });
+          break;
+        case POSTMAN_CONTAINER:
+          setPostmanStatus({ ...postmanStatus, isRunning: true });
+          break;
+
+        default:
+          break;
+      }
+    }
+  };
+
+  const stopContainer = async (container: string, trigger?: boolean) => {
+    console.log('stopping', container);
+    const result = await ddClient.docker.cli.exec('stop', [container]);
+    console.log('result stop', result);
+    if (!result.code && trigger) {
+      switch (container) {
+        case APP_CONTAINER:
+          setAppStatus({ ...appStatus, isRunning: true });
+          break;
+        case MONGO_CONTAINER:
+          setMongoStatus({ ...mongoStatus, isRunning: true });
+          break;
+        case POSTMAN_CONTAINER:
+          setPostmanStatus({ ...postmanStatus, isRunning: true });
+          break;
+
+        default:
+          break;
+      }
+    }
+    return result;
+  };
+
+  const stopMicrocks = async (event?: React.MouseEvent<HTMLButtonElement>) => {
     console.log('Stopping Microcks');
     setIsLoading(true);
-    ddClient.desktopUI.toast.success('Stopping Microcks...');
+    if (event) {
+      ddClient.desktopUI.toast.success('Stopping Microcks...');
+    }
     const result = await ddClient.docker.cli.exec('stop', [
       MONGO_CONTAINER,
       POSTMAN_CONTAINER,
       APP_CONTAINER,
     ]);
+    console.log('result stop', result);
     if (!result.code) {
       setAppStatus({ ...appStatus, isRunning: false });
       setPostmanStatus({ ...postmanStatus, isRunning: false });
       setMongoStatus({ ...mongoStatus, isRunning: false });
+    }
+    return result;
+  };
+
+  const deleteMicrocks = async (event?: React.MouseEvent<HTMLSpanElement>) => {
+    console.log('Deleting Microcks');
+    if (appStatus.isRunning) {
+      const result = await stopMicrocks();
+    }
+    setIsLoading(true);
+    if (event) {
+      ddClient.desktopUI.toast.success('Deleting Microcks...');
+    }
+    const result = await ddClient.docker.cli.exec('rm', [
+      '-v',
+      MONGO_CONTAINER,
+      POSTMAN_CONTAINER,
+      APP_CONTAINER,
+    ]);
+    console.log('result delete', result);
+    if (!result.code) {
+      setAppStatus({ ...appStatus, exists: false, isRunning: false });
+      setPostmanStatus({ ...postmanStatus, exists: false, isRunning: false });
+      setMongoStatus({ ...mongoStatus, exists: false, isRunning: false });
     }
   };
 
@@ -436,6 +520,66 @@ const App = () => {
   const handleOpenSettings = () => {
     console.log('Opening settings dialog.');
     setIsSettingsDialog(true);
+  };
+
+  const handleCloseSettings = async (
+    config: ExtensionConfig | undefined | null,
+  ) => {
+    setIsSettingsDialog(!isSettingsDialog);
+    if (config) {
+      setIsLoading(true);
+      writeExtensionConfig(config);
+      setConfig(config);
+      console.log('appstatus', appStatus);
+      if (appStatus.exists) {
+        if (appStatus.isRunning) {
+          const resStop = await stopContainer(APP_CONTAINER, false);
+          const resDel = await removeContainer(APP_CONTAINER, false);
+          const volumeDir = isWindows()
+            ? `//${appDir.replace(/\\/g, '/').replace('C:', 'c')}`
+            : appDir;
+          const params = [
+            '-d',
+            '--name',
+            APP_CONTAINER,
+            '--network',
+            EXTENSION_NETWORK,
+            '--hostname',
+            'app',
+            '-v',
+            volumeDir + '/config:/deployments/config',
+            '-e',
+            'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
+            '-e',
+            'SPRING_PROFILES_ACTIVE=prod',
+            '-e',
+            'KEYCLOAK_ENABLED=false',
+            '-e',
+            'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
+            '-e',
+            'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
+            '-e',
+            'SPRING_DATA_MONGODB_DATABASE=microcks',
+            '-e',
+            'TEST_CALLBACK_URL=http://microcks:8080',
+            '-e',
+            'ASYNC_MINION_URL=http://microcks-async-minion:8081',
+            '-e',
+            'POSTMAN_RUNNER_URL=http://postman:3000',
+            '-p',
+            `${8080 + config.portOffset}:8080`,
+            '-p',
+            `${9090 + config.portOffset}:9090`,
+            'quay.io/microcks/microcks:latest',
+          ];
+          const resRun = await runContainer(APP_CONTAINER, params);
+          setAppStatus({ ...appStatus, isRunning: true, exists: true });
+        } else {
+          const resDel = await removeContainer(APP_CONTAINER, false);
+          setAppStatus({ ...appStatus, exists: false });
+        }
+      }
+    }
   };
 
   return (
@@ -500,11 +644,19 @@ const App = () => {
               alignItems="center"
             ></Box>
           </Paper>
-          <Box m={2}>
+          <Stack m={2} spacing={2} direction="row">
+            <Button
+              variant="outlined"
+              size="large"
+              startIcon={<SettingsIcon />}
+              onClick={handleOpenSettings}
+            >
+              Settings
+            </Button>
             <Button variant="contained" size="large" onClick={launchMicrocks}>
               Launch Microcks
             </Button>
-          </Box>
+          </Stack>
         </Stack>
       ) : (
         <Box
@@ -570,30 +722,32 @@ const App = () => {
         </Box>
       </Paper>
 
-      <Footer />
       {/* <Box my={2}>
         <Typography variant="h3">APIs &amp; Services</Typography>
         {services.map((service) => (
           <Stack>
             <Typography>
-              <span>Id: </span>
-              {service.id}
+            <span>Id: </span>
+            {service.id}
             </Typography>
             <Typography>{service.name}</Typography>
             <Typography>{service.type}</Typography>
             <Typography>{service.version}</Typography>
-          </Stack>
-        ))}
-      </Box> */}
+            </Stack>
+            ))}
+          </Box> */}
+      <Footer>
+        {appStatus.exists && (
+          <Link onClick={deleteMicrocks} component="button">
+            Delete Microcks
+          </Link>
+        )}
+      </Footer>
       <Settings
         config={config}
+        isRunning={appStatus.isRunning}
         isDialogOpen={isSettingsDialog}
-        handleCloseDialog={(config: ExtensionConfig | undefined | null) => {
-          setIsSettingsDialog(!isSettingsDialog);
-          if (config) {
-            setConfig(config);
-          }
-        }}
+        handleCloseDialog={handleCloseSettings}
       />
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
