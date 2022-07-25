@@ -2,4 +2,4 @@
 
 :: Prints the value of %USERPROFILE% to get this to mount volumes in containers
 
-type %USERPROFILE%
+echo %USERPROFILE%

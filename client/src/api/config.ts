@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ExtensionConfig } from "../types/ExtensionConfig";
-import { APPLICATION_PROPERTIES, FEATURES_PROPERTIES } from "../utils/config";
-import { execOnHost, throwErrorAsString } from "./utils";
+import { ExtensionConfig } from '../types/ExtensionConfig';
+import { APPLICATION_PROPERTIES, FEATURES_PROPERTIES } from '../utils/config';
+import { execOnHost, throwErrorAsString } from './utils';
 
 export async function initializeFileSystem(): Promise<boolean> {
   let cmdResult;
@@ -30,9 +30,11 @@ export async function initializeFileSystem(): Promise<boolean> {
   }
   if (!cmdResult.code) {
     console.log('Filesystem initialization finished without exit code');
-    return true
+    return true;
   } else if (cmdResult.code == 0) {
-    console.log('Filesystem initialization finished with exit code ' + cmdResult.code);
+    console.log(
+      'Filesystem initialization finished with exit code ' + cmdResult.code,
+    );
     return true;
   }
   return false;
@@ -54,7 +56,11 @@ export async function getExtensionConfig(): Promise<ExtensionConfig> {
   try {
     cmdResult = await execOnHost('readconf.sh', 'readconf.bat', []);
   } catch (e: any) {
-    if (e.stderr !== undefined && (e.stderr.includes('file not found') || e.stderr.includes('The system cannot find the file specified.'))) {
+    if (
+      e.stderr !== undefined &&
+      (e.stderr.includes('file not found') ||
+        e.stderr.includes('The system cannot find the file specified.'))
+    ) {
       return new ExtensionConfig();
     }
     throwErrorAsString(e);
@@ -74,7 +80,9 @@ export async function getExtensionConfig(): Promise<ExtensionConfig> {
 export async function writeExtensionConfig(config: ExtensionConfig) {
   let cmdResult;
   try {
-    cmdResult = await execOnHost('writeconf.sh', 'writeconf.bat', [JSON.stringify(config)]);
+    cmdResult = await execOnHost('writeconf.sh', 'writeconf.bat', [
+      JSON.stringify(config),
+    ]);
   } catch (e: any) {
     throwErrorAsString(e);
   }
@@ -89,7 +97,11 @@ export async function writePropertiesFiles(config: ExtensionConfig) {
 
   let cmdResult;
   try {
-    cmdResult = await execOnHost('writeproperties.sh', 'writeproperties.bat', ['"' + applicationProperties + '"', '"' + featuresProperties + '"']);
+    cmdResult = await execOnHost(
+      'writeproperties.sh',
+      'writeproperties.bat',
+      [],
+    );
   } catch (e: any) {
     throwErrorAsString(e);
   }
