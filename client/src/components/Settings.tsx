@@ -1,19 +1,36 @@
+/*
+ * Licensed to Laurent Broudoux (the "Author") under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. Author licenses this
+ * file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import DialogContentText from '@mui/material/DialogContentText';
-import InputLabel from '@mui/material/InputLabel';
-import Input from '@mui/material/Input';
-import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
+
 import { useEffect, useState } from 'react';
-import TextField from '@mui/material/TextField';
+
 import { ExtensionConfig } from '../types/ExtensionConfig';
 
 type Props = {
@@ -37,11 +54,8 @@ const Settings: React.FC<Props> = ({
     }
   }, [config]);
 
-  console.log(config);
-
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, valueAsNumber, value, checked } = event.target;
-    console.log(name, value);
     setLocalConfig((prevState) => ({
       ...prevState,
       [name]: name === 'portOffset' ? valueAsNumber : checked,
@@ -50,7 +64,9 @@ const Settings: React.FC<Props> = ({
 
   const handleClose = (newConfig: ExtensionConfig | undefined | null) => {
     handleCloseDialog(newConfig);
-    if (!newConfig) setLocalConfig(config);
+    if (!newConfig) {
+      setLocalConfig(config);
+    }
   };
 
   return (
@@ -61,7 +77,7 @@ const Settings: React.FC<Props> = ({
     >
       <DialogTitle>Settings</DialogTitle>
       <DialogContent>
-        <Stack justifyContent="center" alignItems="flex-start" spacing={2}>
+        <Stack justifyContent="center" alignItems="flex-start" spacing={3}>
           <FormControl margin="normal">
             <FormControlLabel
               control={
@@ -71,7 +87,7 @@ const Settings: React.FC<Props> = ({
                   onChange={handleChange}
                 />
               }
-              label="Enable Asynchronous APIs"
+              label={<Typography variant="subtitle1">Enable Asynchronous APIs</Typography>}
             />
           </FormControl>
           <TextField
@@ -80,7 +96,7 @@ const Settings: React.FC<Props> = ({
             margin="normal"
             variant="standard"
             type="number"
-            label="Port Offset:"
+            label={<Typography variant="subtitle1">Port Offset:</Typography>}
             value={portOffset}
             onChange={handleChange}
             helperText="Use an offset to avoid port conflicts"
@@ -90,17 +106,17 @@ const Settings: React.FC<Props> = ({
               },
             }}
           />
-          <Typography variant="subtitle1">
-            Microcks will use the following ports:
-          </Typography>
-          <Typography variant="body1">
-            {8080 + portOffset} for main webapp
-            <br /> {9090 + portOffset} for gRPC mocking
-            <br /> 27117 for MongoDB
-            <br /> 3100 for Postman runtime
-            <br /> 8280 for Async Minion if enabled
-            <br /> 9192 for Kafka if Async is enabled
-          </Typography>
+          <Box marginTop={2}>
+            <Typography marginTop={2} variant="subtitle1">
+              Microcks will use the following ports:
+            </Typography>
+            <ul>
+              <li><code>{8080 + portOffset}</code> for main webapp</li>
+              <li><code>{9090 + portOffset}</code> for gRPC endpoint</li>
+              {asyncEnabled && (<li><code>{9092 + portOffset}</code> for Kafka broker</li>)}
+              {asyncEnabled && (<li><code>{8081 + portOffset}</code> for WebSocket endpoint</li>)}
+            </ul>
+          </Box>
         </Stack>
       </DialogContent>
       <DialogActions>

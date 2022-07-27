@@ -18,20 +18,25 @@
  */
 import React, { useEffect, useState } from 'react';
 import { createDockerDesktopClient } from '@docker/extension-api-client';
-import Container from '@mui/material/Container';
+import { colors } from '@docker/docker-mui-theme';
+
+import Backdrop from '@mui/material/Backdrop';
+
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import Stack from '@mui/material/Stack';
-import SettingsIcon from '@mui/icons-material/Settings';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
-import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
+import Container from '@mui/material/Container';
+import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
+import Paper from '@mui/material/Paper';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import SettingsIcon from '@mui/icons-material/Settings';
+import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+
 import {
   initializeFileSystem,
   getExtensionConfig,
@@ -47,7 +52,6 @@ import { EXTENSION_NETWORK } from './utils/constants';
 import Settings from './components/Settings';
 import Footer from './components/Footer';
 import './App.css';
-import { Extension } from '@docker/extension-api-client-types/dist/v1';
 
 // const ddClient = createDockerDesktopClient();
 const client = createDockerDesktopClient();
@@ -78,9 +82,7 @@ const App = () => {
   const [postmanStatus, setPostmanStatus] = useState({} as ContainerStatus);
   const [mongoStatus, setMongoStatus] = useState({} as ContainerStatus);
   const [kafkaStatus, setKafkaStatus] = useState({} as ContainerStatus);
-  const [asyncMinionStatus, setAsyncMinionStatus] = useState(
-    {} as ContainerStatus,
-  );
+  const [asyncMinionStatus, setAsyncMinionStatus] = useState({} as ContainerStatus);
 
   const [initialized, setInitialized] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
@@ -106,7 +108,6 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    console.log(appStatus);
     setInitialized(appStatus.isRunning);
     if (appStatus.isRunning && isLoading) {
       ddClient.desktopUI.toast.success('Microcks is running');
@@ -119,33 +120,24 @@ const App = () => {
       console.log('Home path: ' + result);
       if (result != null) {
         result = result.replace(/\n/g, '').replace(/\r/g, '');
-        const dir =
-          result +
-          (isWindows() ? '\\' : '/') +
-          '.microcks-docker-desktop-extension';
+        const dir = result + (isWindows() ? '\\' : '/') + '.microcks-docker-desktop-extension';
         console.log('Extension dir: ' + dir);
         setAppDir(dir);
       }
-      // const svcs = result?.parseJsonObject() as Service[];
-      const svcs = result;
-      console.log(svcs);
-      // setServices(svcs);
     });
 
     getExtensionConfig().then((result) => {
       const conf = result;
-      console.log('Config:', conf);
       setConfig(conf);
-      writePropertiesFiles(config);
+      console.log('Extension config: ' + JSON.stringify(conf));
+      writePropertiesFiles(conf);
     });
 
     getContainerInfo(APP_CONTAINER).then((info) => setAppStatus(info));
     getContainerInfo(POSTMAN_CONTAINER).then((info) => setPostmanStatus(info));
     getContainerInfo(MONGO_CONTAINER).then((info) => setMongoStatus(info));
     getContainerInfo(KAFKA_CONTAINER).then((info) => setKafkaStatus(info));
-    getContainerInfo(ASYNC_MINION_CONTAINER).then((info) =>
-      setAsyncMinionStatus(info),
-    );
+    getContainerInfo(ASYNC_MINION_CONTAINER).then((info) => setAsyncMinionStatus(info));
   };
 
   const launchMicrocks = async () => {
@@ -168,7 +160,7 @@ const App = () => {
         const volumeDir = isWindows()
           ? `//${appDir.replace(/\\/g, '/').replace('C:', 'c')}`
           : appDir;
-        console.log('vol', volumeDir);
+        
         console.log('mongostatus', mongoStatus);
         if (mongoStatus && !mongoStatus.isRunning) {
           const mStatus = { ...mongoStatus };
@@ -178,14 +170,10 @@ const App = () => {
               'run',
               [
                 '-d',
-                '--name',
-                MONGO_CONTAINER,
-                '--network',
-                EXTENSION_NETWORK,
-                '--hostname',
-                'mongo',
-                '-v',
-                volumeDir + '/data:/data/db',
+                '--name', MONGO_CONTAINER,
+                '--network', EXTENSION_NETWORK,
+                '--hostname', 'mongo',
+                '-v', volumeDir + '/data:/data/db',
                 'mongo:3.4.23',
               ],
               { stream: buildStreamingOpts(MONGO_CONTAINER) },
@@ -207,12 +195,9 @@ const App = () => {
               'run',
               [
                 '-d',
-                '--name',
-                POSTMAN_CONTAINER,
-                '--network',
-                EXTENSION_NETWORK,
-                '--hostname',
-                'postman',
+                '--name', POSTMAN_CONTAINER,
+                '--network', EXTENSION_NETWORK,
+                '--hostname', 'postman',
                 'quay.io/microcks/microcks-postman-runtime:latest',
               ],
               { stream: buildStreamingOpts(POSTMAN_CONTAINER) },
@@ -230,36 +215,21 @@ const App = () => {
           const aStatus = { ...appStatus };
           const params = [
             '-d',
-            '--name',
-            APP_CONTAINER,
-            '--network',
-            EXTENSION_NETWORK,
-            '--hostname',
-            'app',
-            '-v',
-            volumeDir + '/config:/deployments/config',
-            '-e',
-            'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
-            '-e',
-            'SPRING_PROFILES_ACTIVE=prod',
-            '-e',
-            'KEYCLOAK_ENABLED=false',
-            '-e',
-            'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
-            '-e',
-            'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
-            '-e',
-            'SPRING_DATA_MONGODB_DATABASE=microcks',
-            '-e',
-            'TEST_CALLBACK_URL=http://microcks:8080',
-            '-e',
-            'ASYNC_MINION_URL=http://microcks-async-minion:8081',
-            '-e',
-            'POSTMAN_RUNNER_URL=http://postman:3000',
-            '-p',
-            `${8080 + config.portOffset}:8080`,
-            '-p',
-            `${9090 + config.portOffset}:9090`,
+            '--name', APP_CONTAINER,
+            '--network', EXTENSION_NETWORK,
+            '--hostname', 'app',
+            '-v', volumeDir + '/config:/deployments/config',
+            '-e', 'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
+            '-e', 'SPRING_PROFILES_ACTIVE=prod',
+            '-e', 'KEYCLOAK_ENABLED=false',
+            '-e', 'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
+            '-e', 'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
+            '-e', 'SPRING_DATA_MONGODB_DATABASE=microcks',
+            '-e', 'TEST_CALLBACK_URL=http://microcks:8080',
+            '-e', 'ASYNC_MINION_URL=http://microcks-async-minion:8081',
+            '-e', 'POSTMAN_RUNNER_URL=http://postman:3000',
+            '-p', `${8080 + config.portOffset}:8080`,
+            '-p', `${9090 + config.portOffset}:9090`,
             'quay.io/microcks/microcks:latest',
           ];
           if (!appStatus.exists) {
@@ -279,57 +249,49 @@ const App = () => {
         }
 
         if (config.asyncEnabled) {
-          console.info(
-            'Async configuration is enabled, launching async related containers...',
-          );
+          console.log('Async configuration is enabled, launching async related containers...');
           if (kafkaStatus && !kafkaStatus.isRunning) {
+            const kStatus = { ...kafkaStatus };
+            const params = [
+              '-d',
+              '--name', KAFKA_CONTAINER,
+              '--network', EXTENSION_NETWORK,
+              '--hostname', 'kafka',
+              '-p', `${9092 + config.portOffset}:${9092 + config.portOffset}`,
+              '-p', '19092:19092',
+              'vectorized/redpanda:v21.10.2',
+              `redpanda start --overprovisioned --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false --kafka-addr PLAINTEXT://0.0.0.0:19092,EXTERNAL://0.0.0.0:${9092 + config.portOffset} --advertise-kafka-addr PLAINTEXT://kafka:19092,EXTERNAL://localhost:${9092 + config.portOffset}`,
+            ];
             if (!kafkaStatus.exists) {
-              const kafkaRes = ddClient.docker.cli.exec(
-                'run',
-                [
-                  '-d',
-                  '--name',
-                  KAFKA_CONTAINER,
-                  '--network',
-                  EXTENSION_NETWORK,
-                  '--hostname',
-                  'kafka',
-                  '-p',
-                  '9092:9092',
-                  '-p',
-                  '19092:19092',
-                  'vectorized/redpanda:v21.10.2',
-                  'redpanda start --overprovisioned --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false --kafka-addr PLAINTEXT://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092 --advertise-kafka-addr PLAINTEXT://kafka:19092,EXTERNAL://localhost:9092',
-                ],
-                { stream: buildStreamingOpts(KAFKA_CONTAINER) },
-              );
-              kafkaStatus.exists = true;
+              console.log('Creating ', KAFKA_CONTAINER);
+              const result = await runContainer(KAFKA_CONTAINER, params);
+              kStatus.exists = true;
             } else {
-              const kafkaRes = ddClient.docker.cli.exec('start', [
-                KAFKA_CONTAINER,
-              ]);
+              if (kafkaStatus.mappedPort != 9092 + config.portOffset) {
+                const removeRes = await removeContainer(KAFKA_CONTAINER);
+                const runRes = await runContainer(KAFKA_CONTAINER, params);
+              } else {
+                startContainer(KAFKA_CONTAINER);
+              }
             }
-            kafkaStatus.isRunning = true;
+            kStatus.isRunning = true;
+            setKafkaStatus(kStatus);
           }
 
           if (asyncMinionStatus && !asyncMinionStatus.isRunning) {
             if (!asyncMinionStatus.exists) {
+              console.log('Creating ', ASYNC_MINION_CONTAINER);
               const minionRes = ddClient.docker.cli.exec(
                 'run',
                 [
                   '-d',
-                  '--name',
-                  ASYNC_MINION_CONTAINER,
-                  '--network',
-                  EXTENSION_NETWORK,
-                  '--hostname',
-                  'microcks-async-minion',
-                  '-e',
-                  'QUARKUS_PROFILE=docker-compose',
-                  '--restart',
-                  'on-failure',
-                  '-p',
-                  '8081:8081',
+                  '--name', ASYNC_MINION_CONTAINER,
+                  '--network', EXTENSION_NETWORK,
+                  '--hostname', 'microcks-async-minion',
+                  '-v', volumeDir + '/config:/deployments/config',
+                  '-e', 'QUARKUS_PROFILE=docker-compose',
+                  '--restart', 'on-failure',
+                  '-p', `${8081 + config.portOffset}:8081`,
                   'quay.io/microcks/microcks-async-minion:latest',
                 ],
                 { stream: buildStreamingOpts(ASYNC_MINION_CONTAINER) },
@@ -348,44 +310,11 @@ const App = () => {
         console.error('Error while ensuring extension network exists');
       }
     });
-
-    /*
-    const kafkaRes = await ddClient.docker.cli.exec("run", [
-      "-d", "--name", "kafka",
-      "-p", "9092:9092", "-p", "19092:19092",
-      "vectorized/redpanda:v21.10.2",
-      "redpanda start --overprovisioned --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false --kafka-addr PLAINTEXT://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092 --advertise-kafka-addr PLAINTEXT://kafka:19092,EXTERNAL://localhost:9092"],
-      { stream: buildStreamingOpts("kafka") }
-    );
-    const appRes = await ddClient.docker.cli.exec("run", [
-      "-d", "--name", "app",
-      "-e", "SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *",
-      "-e", "SPRING_PROFILES_ACTIVE=prod",
-      "-e", "KEYCLOAK_ENABLED=false",
-      "-e", "KAFKA_BOOTSTRAP_SERVER=kafka:19092",
-      "-e", "SPRING_DATA_MONGODB_URI=mongodb://mongo:27017",
-      "-e", "SPRING_DATA_MONGODB_DATABASE=microcks",
-      "-e", "TEST_CALLBACK_URL=http://microcks:8080",
-      "-e", "ASYNC_MINION_URL=http://microcks-async-minion:8081",
-      "-e", "POSTMAN_RUNNER_URL=http://postman:3000",
-      "-p", "8080:8080", "-p", "9090:9090",
-      "quay.io/microcks/microcks:latest"],
-      { stream: buildStreamingOpts("app") }
-    );
-    const minionRes = await ddClient.docker.cli.exec("run", [
-      "-d", "--name", "async-minion",
-      "-e", "QUARKUS_PROFILE=docker-compose",
-      "--restart", "on-failure",
-      "-p", "8081:8081",
-      "quay.io/microcks/microcks-async-minion:latest"],
-      { stream: buildStreamingOpts("async-minion") }
-    );
-    */
   };
 
   const runContainer = async (container: string, params: string[]) => {
     const appRes = ddClient.docker.cli.exec('run', params, {
-      stream: buildStreamingOpts(APP_CONTAINER),
+      stream: buildStreamingOpts(container),
     });
   };
 
@@ -402,6 +331,12 @@ const App = () => {
           break;
         case POSTMAN_CONTAINER:
           setPostmanStatus({ ...postmanStatus, exists: false });
+          break;
+        case KAFKA_CONTAINER:
+          setKafkaStatus({ ...kafkaStatus, exists: false });
+          break;
+        case ASYNC_MINION_CONTAINER:
+          setAsyncMinionStatus({ ...asyncMinionStatus, exists: false});
           break;
 
         default:
@@ -425,6 +360,12 @@ const App = () => {
         case POSTMAN_CONTAINER:
           setPostmanStatus({ ...postmanStatus, isRunning: true });
           break;
+        case KAFKA_CONTAINER:
+          setKafkaStatus({ ...kafkaStatus, isRunning: true });
+          break;
+        case ASYNC_MINION_CONTAINER:
+          setAsyncMinionStatus({ ...asyncMinionStatus, isRunning: true});
+          break;
 
         default:
           break;
@@ -433,19 +374,24 @@ const App = () => {
   };
 
   const stopContainer = async (container: string, trigger?: boolean) => {
-    console.log('stopping', container);
+    console.log('Stopping ', container);
     const result = await ddClient.docker.cli.exec('stop', [container]);
-    console.log('result stop', result);
     if (!result.code && trigger) {
       switch (container) {
         case APP_CONTAINER:
-          setAppStatus({ ...appStatus, isRunning: true });
+          setAppStatus({ ...appStatus, isRunning: false });
           break;
         case MONGO_CONTAINER:
-          setMongoStatus({ ...mongoStatus, isRunning: true });
+          setMongoStatus({ ...mongoStatus, isRunning: false });
           break;
         case POSTMAN_CONTAINER:
-          setPostmanStatus({ ...postmanStatus, isRunning: true });
+          setPostmanStatus({ ...postmanStatus, isRunning: false });
+          break;
+        case KAFKA_CONTAINER:
+          setKafkaStatus({ ...kafkaStatus, isRunning: false });
+          break;
+        case ASYNC_MINION_CONTAINER:
+          setAsyncMinionStatus({ ...asyncMinionStatus, isRunning: false});
           break;
 
         default:
@@ -456,7 +402,7 @@ const App = () => {
   };
 
   const stopMicrocks = async (event?: React.MouseEvent<HTMLButtonElement>) => {
-    console.log('Stopping Microcks');
+    console.log('Stopping Microcks...');
     setIsLoading(true);
     if (event) {
       ddClient.desktopUI.toast.success('Stopping Microcks...');
@@ -464,13 +410,21 @@ const App = () => {
     const result = await ddClient.docker.cli.exec('stop', [
       MONGO_CONTAINER,
       POSTMAN_CONTAINER,
-      APP_CONTAINER,
+      APP_CONTAINER
     ]);
-    console.log('result stop', result);
     if (!result.code) {
       setAppStatus({ ...appStatus, isRunning: false });
       setPostmanStatus({ ...postmanStatus, isRunning: false });
       setMongoStatus({ ...mongoStatus, isRunning: false });
+    }
+    if (config.asyncEnabled) {
+      const asyncRes =   await ddClient.docker.cli.exec('stop', [
+        KAFKA_CONTAINER, ASYNC_MINION_CONTAINER
+      ]);
+      if (!asyncRes.code) {
+        setKafkaStatus({ ...kafkaStatus, isRunning: false});
+        setAsyncMinionStatus({ ...asyncMinionStatus, isRunning: false});
+      }
     }
     return result;
   };
@@ -488,13 +442,22 @@ const App = () => {
       '-v',
       MONGO_CONTAINER,
       POSTMAN_CONTAINER,
-      APP_CONTAINER,
+      APP_CONTAINER
     ]);
     console.log('result delete', result);
     if (!result.code) {
       setAppStatus({ ...appStatus, exists: false, isRunning: false });
       setPostmanStatus({ ...postmanStatus, exists: false, isRunning: false });
       setMongoStatus({ ...mongoStatus, exists: false, isRunning: false });
+    }
+    if (config.asyncEnabled) {
+      const asyncRes =   await ddClient.docker.cli.exec('rm', [
+        '-v', KAFKA_CONTAINER, ASYNC_MINION_CONTAINER
+      ]);
+      if (!asyncRes.code) {
+        setKafkaStatus({ ...kafkaStatus, exists: false, isRunning: false});
+        setAsyncMinionStatus({ ...asyncMinionStatus, exists: false, isRunning: false});
+      }
     }
   };
 
@@ -526,59 +489,23 @@ const App = () => {
     config: ExtensionConfig | undefined | null,
   ) => {
     setIsSettingsDialog(!isSettingsDialog);
+
     if (config) {
       setIsLoading(true);
+      writePropertiesFiles(config);
       writeExtensionConfig(config);
       setConfig(config);
+
       console.log('appstatus', appStatus);
+
       if (appStatus.exists) {
         if (appStatus.isRunning) {
-          const resStop = await stopContainer(APP_CONTAINER, false);
-          const resDel = await removeContainer(APP_CONTAINER, false);
-          const volumeDir = isWindows()
-            ? `//${appDir.replace(/\\/g, '/').replace('C:', 'c')}`
-            : appDir;
-          const params = [
-            '-d',
-            '--name',
-            APP_CONTAINER,
-            '--network',
-            EXTENSION_NETWORK,
-            '--hostname',
-            'app',
-            '-v',
-            volumeDir + '/config:/deployments/config',
-            '-e',
-            'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
-            '-e',
-            'SPRING_PROFILES_ACTIVE=prod',
-            '-e',
-            'KEYCLOAK_ENABLED=false',
-            '-e',
-            'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
-            '-e',
-            'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
-            '-e',
-            'SPRING_DATA_MONGODB_DATABASE=microcks',
-            '-e',
-            'TEST_CALLBACK_URL=http://microcks:8080',
-            '-e',
-            'ASYNC_MINION_URL=http://microcks-async-minion:8081',
-            '-e',
-            'POSTMAN_RUNNER_URL=http://postman:3000',
-            '-p',
-            `${8080 + config.portOffset}:8080`,
-            '-p',
-            `${9090 + config.portOffset}:9090`,
-            'quay.io/microcks/microcks:latest',
-          ];
-          const resRun = await runContainer(APP_CONTAINER, params);
-          setAppStatus({ ...appStatus, isRunning: true, exists: true });
-        } else {
-          const resDel = await removeContainer(APP_CONTAINER, false);
-          setAppStatus({ ...appStatus, exists: false });
+          const resStop = await stopMicrocks();
         }
+        // Containers should always be removed.
+        const resDel = await deleteMicrocks();
       }
+      setIsLoading(false);
     }
   };
 
@@ -595,20 +522,20 @@ const App = () => {
           }}
         >
           <Box
-            m={2}
+            m={4}
             sx={{
               width: 450,
               maxWidth: { xs: 450, md: 350 },
             }}
             component="img"
-            src="assets/images/microcks-logo-blue-baseline.png"
+            src="assets/images/microcks-logo-blue-baseline-tweet.png"
             alt="Microcks Logo"
           />
           <Paper
-            elevation={2}
+            elevation={3}
             sx={{
-              backgroundColor: '#dadada',
-              margin: 2,
+              backgroundColor: colors.white25,
+              margin: 4,
               padding: 2,
               width: '100%',
               display: 'flex',
@@ -632,9 +559,9 @@ const App = () => {
               display="flex"
               alignItems="center"
             >
-              <Typography>
+              <Typography variant="subtitle1">
                 Microcks is not running. First launch can take some time while
-                we're pullig the container images.
+                we're pulling the container images.
               </Typography>
             </Box>
             <Box
@@ -667,14 +594,16 @@ const App = () => {
             <Typography sx={{ fontWeight: 'bolder' }} variant="h5">
               Microcks for Docker Desktop
             </Typography>
-            <Typography variant="subtitle1">
-              API Mocking and Testing for REST, GraphQL and AsyncAPI
+            <Typography variant="subtitle1" color="InactiveCaptionText">
+              API Mocking and Testing for REST, GraphQL, gRPC and AsyncAPI
             </Typography>
           </Box>
           <Box>
-            <IconButton onClick={handleOpenSettings}>
-              <SettingsIcon />
-            </IconButton>
+            <Tooltip title="Settings">
+              <IconButton onClick={handleOpenSettings}>
+                <SettingsIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
           <Box m={2}>
             <Button variant="contained" color="error" onClick={stopMicrocks}>
@@ -684,9 +613,10 @@ const App = () => {
         </Box>
       )}
       <Paper
-        elevation={2}
+        elevation={3}
         sx={{
-          backgroundColor: '#dadada',
+          backgroundColor: colors.white25,
+          marginTop: 4,
           padding: 2,
           width: '100%',
           display: 'flex',

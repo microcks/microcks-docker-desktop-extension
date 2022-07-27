@@ -80,9 +80,9 @@ export async function getExtensionConfig(): Promise<ExtensionConfig> {
 export async function writeExtensionConfig(config: ExtensionConfig) {
   let cmdResult;
   try {
-    cmdResult = await execOnHost('writeconf.sh', 'writeconf.bat', [
-      JSON.stringify(config),
-    ]);
+    cmdResult = await execOnHost('writeconf.sh', 'writeconf.bat', 
+      ['"' + JSON.stringify(config).replaceAll('"', '\\"') + '"']
+    );
   } catch (e: any) {
     throwErrorAsString(e);
   }
@@ -95,12 +95,17 @@ export async function writePropertiesFiles(config: ExtensionConfig) {
   let applicationProperties = APPLICATION_PROPERTIES;
   let featuresProperties = FEATURES_PROPERTIES;
 
+  console.log("Writing properties file with offset: " + config.portOffset);
+  let customizedFeaturesProperties = featuresProperties
+      .replaceAll('localhost:9092', 'localhost:' + (9092 + config.portOffset))
+      .replaceAll('localhost:8081', 'localhost:' + (8081 + config.portOffset))
+
   let cmdResult;
   try {
     cmdResult = await execOnHost(
       'writeproperties.sh',
       'writeproperties.bat',
-      [],
+      ['"' + applicationProperties + '"', '"' + customizedFeaturesProperties + '"']
     );
   } catch (e: any) {
     throwErrorAsString(e);
