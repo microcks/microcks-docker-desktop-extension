@@ -18,7 +18,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { createDockerDesktopClient } from '@docker/extension-api-client';
-import { colors } from '@docker/docker-mui-theme';
 
 import Backdrop from '@mui/material/Backdrop';
 
@@ -52,7 +51,6 @@ import { EXTENSION_NETWORK } from './utils/constants';
 import Settings from './components/Settings';
 import Footer from './components/Footer';
 import './App.css';
-import { updateImportDeclaration } from 'typescript';
 
 // const ddClient = createDockerDesktopClient();
 const client = createDockerDesktopClient();
