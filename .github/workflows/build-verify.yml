@@ -40,7 +40,7 @@ jobs:
 
       - name: Package container image
         run: |
-          docker build --tag=microcks/microcks-docker-desktop-extension:$IMAGE_TAG .
+          docker build --build-arg BUILDPLATFORM=linux/amd64 --tag=microcks/microcks-docker-desktop-extension:$IMAGE_TAG .
 
       - name: Valdiate extension completion
         run: |
