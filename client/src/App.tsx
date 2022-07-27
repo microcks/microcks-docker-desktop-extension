@@ -52,6 +52,7 @@ import { EXTENSION_NETWORK } from './utils/constants';
 import Settings from './components/Settings';
 import Footer from './components/Footer';
 import './App.css';
+import { updateImportDeclaration } from 'typescript';
 
 // const ddClient = createDockerDesktopClient();
 const client = createDockerDesktopClient();
@@ -75,6 +76,8 @@ type Service = {
 const App = () => {
   const ddClient = useDockerDesktopClient();
 
+  const [uiMode, setUIMode] = useState({} as string);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSettingsDialog, setIsSettingsDialog] = useState(false);
 
@@ -95,6 +98,17 @@ const App = () => {
   const MONGO_CONTAINER: string = 'microcks-mongodb';
   const KAFKA_CONTAINER: string = 'microcks-kafka';
   const ASYNC_MINION_CONTAINER: string = 'microcks-async-minion';
+
+  useEffect(() => {
+    const isSystemInDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    console.log('isSystemInDarkMode? ' + isSystemInDarkMode);
+    setUIMode(isSystemInDarkMode ? "dark" : "light");
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+      const colorScheme = event.matches ? "dark" : "light";
+      console.log('colorScheme change: ' + colorScheme);
+      setUIMode(colorScheme);
+    });
+  }, []);
 
   useEffect(() => {
     console.log('Loading Microcks Extension for Docker Desktop.');
@@ -528,13 +542,12 @@ const App = () => {
               maxWidth: { xs: 450, md: 350 },
             }}
             component="img"
-            src="assets/images/microcks-logo-blue-baseline-tweet.png"
+            src={ uiMode === 'light' ? 'assets/images/microcks-logo-blue-baseline-tweet.png':'assets/images/microcks-logo-white-baseline-tweet.png' }
             alt="Microcks Logo"
           />
           <Paper
             elevation={3}
             sx={{
-              backgroundColor: colors.white25,
               margin: 4,
               padding: 2,
               width: '100%',
@@ -615,7 +628,6 @@ const App = () => {
       <Paper
         elevation={3}
         sx={{
-          backgroundColor: colors.white25,
           marginTop: 4,
           padding: 2,
           width: '100%',
