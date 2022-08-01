@@ -46,6 +46,7 @@ import {
 import { ExtensionConfig } from './types/ExtensionConfig';
 import { ContainerStatus } from './types/ContainerStatus';
 import { getContainerInfo } from './api/containers';
+import { sendMetric } from './api/metrics';
 import { ensureNetworkExists } from './api/network';
 import { EXTENSION_NETWORK } from './utils/constants';
 import Settings from './components/Settings';
@@ -114,6 +115,7 @@ const App = () => {
     initializeFileSystem().then((result) => {
       if (result) {
         initializeExtension();
+        sendMetric("microcks_extension_opened", {});
       }
       // TODO: managed this low level error that prevent extension initialization.
     });
@@ -154,6 +156,7 @@ const App = () => {
 
   const launchMicrocks = async () => {
     console.log('Launch Microcks!');
+    sendMetric("microcks_extension_launched", {'config': config});
 
     setIsLoading(true);
 
@@ -415,6 +418,8 @@ const App = () => {
 
   const stopMicrocks = async (event?: React.MouseEvent<HTMLButtonElement>) => {
     console.log('Stopping Microcks...');
+    sendMetric("microcks_extension_stopped", {'config': config});
+    
     setIsLoading(true);
     if (event) {
       ddClient.desktopUI.toast.success('Stopping Microcks...');
