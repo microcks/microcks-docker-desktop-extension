@@ -44,8 +44,9 @@ jobs:
 
       - name: Valdiate extension completion
         run: |
-          docker extension validate metadata.json
-          docker extension validate microcks/microcks-docker-desktop-extension:$IMAGE_TAG
+          # Does not work with the docker version of ubuntu-latest for now
+          #docker extension validate metadata.json
+          #docker extension validate microcks/microcks-docker-desktop-extension:$IMAGE_TAG
 
       - name: Login and push to Docker.io Registry
         if: github.repository_owner == 'microcks'
