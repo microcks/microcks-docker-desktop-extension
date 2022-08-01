@@ -2,7 +2,7 @@ name: build-verify-package
 on:
   push:
     paths-ignore:
-      - '.github/**'
+      #- '.github/**'
       - '.gitignore'
       - 'LICENSE'
       - 'README*'
@@ -40,8 +40,10 @@ jobs:
 
       - name: Package container image
         run: |
+          set -x
           BUILDPLATFORM=linux/amd64
-          docker build --build-arg BUILDPLATFORM=linux/amd64 --tag=microcks/microcks-docker-desktop-extension:$IMAGE_TAG .
+          echo $BUILDPLATFORM
+          docker build --tag=microcks/microcks-docker-desktop-extension:$IMAGE_TAG .
 
       - name: Valdiate extension completion
         run: |
