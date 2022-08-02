@@ -21,7 +21,7 @@ import { createDockerDesktopClient } from '@docker/extension-api-client';
 var clientID = "";
 
 function send(eventName: string, clientID: string, payload: Object) {
-  fetch(`https://microcks-dde-metrics-oafcwlgvlq-ew.a.run.app`, {
+  fetch(`https://microcks-dde-metrics-oafcwlgvlq-ew.a.run.app/collect`, {
     method: "POST",
     body: JSON.stringify({
       client_id: clientID,
