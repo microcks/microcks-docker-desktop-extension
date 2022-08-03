@@ -193,7 +193,6 @@ const App = () => {
         
         console.log('mongostatus', mongoStatus);
         if (mongoStatus && !mongoStatus.isRunning) {
-          const mStatus = { ...mongoStatus };
           if (!mongoStatus.exists) {
             console.log('Creating ', MONGO_CONTAINER);
             const mongoRes = ddClient.docker.cli.exec(
@@ -206,19 +205,15 @@ const App = () => {
                 '-v', volumeDir + '/data:/data/db',
                 'mongo:3.4.23',
               ],
-              { stream: buildStreamingOpts(MONGO_CONTAINER) },
+              { stream: buildStreamingOpts(MONGO_CONTAINER, setMongoStatus) },
             );
-            mStatus.exists = true;
           } else {
             startContainer(MONGO_CONTAINER);
           }
-          mStatus.isRunning = true;
-          setMongoStatus(mStatus);
         }
 
         console.log('postmanstatus', postmanStatus);
         if (postmanStatus && !postmanStatus.isRunning) {
-          const pStatus = { ...postmanStatus };
           if (!postmanStatus.exists) {
             console.log('Creating ', POSTMAN_CONTAINER);
             const postmanRes = ddClient.docker.cli.exec(
@@ -230,19 +225,15 @@ const App = () => {
                 '--hostname', 'postman',
                 'quay.io/microcks/microcks-postman-runtime:latest',
               ],
-              { stream: buildStreamingOpts(POSTMAN_CONTAINER) },
+              { stream: buildStreamingOpts(POSTMAN_CONTAINER, setPostmanStatus) },
             );
-            pStatus.exists = true;
           } else {
             startContainer(POSTMAN_CONTAINER);
           }
-          pStatus.isRunning = true;
-          setPostmanStatus(pStatus);
         }
 
         console.log('appstatus', appStatus);
         if (appStatus && !appStatus.isRunning) {
-          const aStatus = { ...appStatus };
           const params = [
             '-d',
             '--name', APP_CONTAINER,
@@ -264,24 +255,20 @@ const App = () => {
           ];
           if (!appStatus.exists) {
             console.log('Creating ', APP_CONTAINER);
-            const result = await runContainer(APP_CONTAINER, params);
-            aStatus.exists = true;
+            const result = await runContainer(APP_CONTAINER, params, setAppStatus);
           } else {
             if (appStatus.mappedPort != 8080 + config.portOffset) {
               const removeRes = await removeContainer(APP_CONTAINER);
-              const runRes = await runContainer(APP_CONTAINER, params);
+              const runRes = await runContainer(APP_CONTAINER, params, setAppStatus);
             } else {
               startContainer(APP_CONTAINER);
             }
           }
-          aStatus.isRunning = true;
-          setAppStatus(aStatus);
         }
 
         if (config.asyncEnabled) {
           console.log('Async configuration is enabled, launching async related containers...');
           if (kafkaStatus && !kafkaStatus.isRunning) {
-            const kStatus = { ...kafkaStatus };
             const params = [
               '-d',
               '--name', KAFKA_CONTAINER,
@@ -294,18 +281,15 @@ const App = () => {
             ];
             if (!kafkaStatus.exists) {
               console.log('Creating ', KAFKA_CONTAINER);
-              const result = await runContainer(KAFKA_CONTAINER, params);
-              kStatus.exists = true;
+              const result = await runContainer(KAFKA_CONTAINER, params, setKafkaStatus);
             } else {
               if (kafkaStatus.mappedPort != 9092 + config.portOffset) {
                 const removeRes = await removeContainer(KAFKA_CONTAINER);
-                const runRes = await runContainer(KAFKA_CONTAINER, params);
+                const runRes = await runContainer(KAFKA_CONTAINER, params, setKafkaStatus);
               } else {
                 startContainer(KAFKA_CONTAINER);
               }
             }
-            kStatus.isRunning = true;
-            setKafkaStatus(kStatus);
           }
 
           if (asyncMinionStatus && !asyncMinionStatus.isRunning) {
@@ -324,15 +308,13 @@ const App = () => {
                   '-p', `${8081 + config.portOffset}:8081`,
                   'quay.io/microcks/microcks-async-minion:latest',
                 ],
-                { stream: buildStreamingOpts(ASYNC_MINION_CONTAINER) },
+                { stream: buildStreamingOpts(ASYNC_MINION_CONTAINER,setAsyncMinionStatus) },
               );
-              asyncMinionStatus.exists = true;
             } else {
               const minionRes = ddClient.docker.cli.exec('start', [
                 ASYNC_MINION_CONTAINER,
               ]);
             }
-            asyncMinionStatus.isRunning = true;
           }
         }
       } else {
@@ -342,9 +324,9 @@ const App = () => {
     });
   };
 
-  const runContainer = async (container: string, params: string[]) => {
+  const runContainer = async (container: string, params: string[], status: React.Dispatch<React.SetStateAction<ContainerStatus>>) => {
     const appRes = ddClient.docker.cli.exec('run', params, {
-      stream: buildStreamingOpts(container),
+      stream: buildStreamingOpts(container, status),
     });
   };
 
@@ -493,7 +475,7 @@ const App = () => {
     }
   };
 
-  const buildStreamingOpts = (container: string): any => {
+  const buildStreamingOpts = (container: string, status: React.Dispatch<React.SetStateAction<ContainerStatus>>): any => {
     return {
       onOutput(data: any) {
         if (data.stdout) {
@@ -507,6 +489,9 @@ const App = () => {
       },
       onClose(exitCode: any) {
         console.log('[%s] ' + 'onClose with exit code ' + exitCode, container);
+        if (!exitCode) {
+          status((prevStatus) => ({...prevStatus, isRunning: true, exits: true}))
+        }
       },
       splitOutputLines: true,
     };
