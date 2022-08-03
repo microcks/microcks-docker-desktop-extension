@@ -87,6 +87,7 @@ const App = () => {
   const [asyncMinionStatus, setAsyncMinionStatus] = useState({} as ContainerStatus);
 
   const [initialized, setInitialized] = useState(false);
+  const [launched, setLaunched] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
 
   const [appDir, setAppDir] = useState('');
@@ -122,12 +123,26 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    console.log("useEffect() appStatus",appStatus)
     setInitialized(appStatus.isRunning);
     if (appStatus.isRunning && isLoading) {
       ddClient.desktopUI.toast.success('Microcks is running');
     }
     setIsLoading(false);
   }, [appStatus]);
+
+  useEffect(() => {
+    console.log("new config:", config)
+    console.log("launched:", launched)
+    
+    if (launched) {
+      setLaunched(false)
+      const res = launchMicrocks()
+    }
+    
+    setIsLoading(false)
+  }, [launched])
+  
 
   const initializeExtension = () => {
     getHome().then((result) => {
@@ -429,7 +444,7 @@ const App = () => {
       POSTMAN_CONTAINER,
       APP_CONTAINER
     ]);
-    if (!result.code) {
+    if (event && !result.code) {
       setAppStatus({ ...appStatus, isRunning: false });
       setPostmanStatus({ ...postmanStatus, isRunning: false });
       setMongoStatus({ ...mongoStatus, isRunning: false });
@@ -438,7 +453,7 @@ const App = () => {
       const asyncRes =   await ddClient.docker.cli.exec('stop', [
         KAFKA_CONTAINER, ASYNC_MINION_CONTAINER
       ]);
-      if (!asyncRes.code) {
+      if (event && !asyncRes.code) {
         setKafkaStatus({ ...kafkaStatus, isRunning: false});
         setAsyncMinionStatus({ ...asyncMinionStatus, isRunning: false});
       }
@@ -462,7 +477,7 @@ const App = () => {
       APP_CONTAINER
     ]);
     console.log('result delete', result);
-    if (!result.code) {
+    if (event && !result.code) {
       setAppStatus({ ...appStatus, exists: false, isRunning: false });
       setPostmanStatus({ ...postmanStatus, exists: false, isRunning: false });
       setMongoStatus({ ...mongoStatus, exists: false, isRunning: false });
@@ -471,7 +486,7 @@ const App = () => {
       const asyncRes =   await ddClient.docker.cli.exec('rm', [
         '-v', KAFKA_CONTAINER, ASYNC_MINION_CONTAINER
       ]);
-      if (!asyncRes.code) {
+      if (event && !asyncRes.code) {
         setKafkaStatus({ ...kafkaStatus, exists: false, isRunning: false});
         setAsyncMinionStatus({ ...asyncMinionStatus, exists: false, isRunning: false});
       }
@@ -506,23 +521,28 @@ const App = () => {
     config: ExtensionConfig | undefined | null,
   ) => {
     setIsSettingsDialog(!isSettingsDialog);
+    
+    console.log('handleClose() config', config);
 
     if (config) {
       setIsLoading(true);
       writePropertiesFiles(config);
       writeExtensionConfig(config);
-      setConfig(config);
-
-      console.log('appstatus', appStatus);
-
+      
+      console.log('handleClose() appstatus', appStatus);
+      
       if (appStatus.exists) {
-        if (appStatus.isRunning) {
-          const resStop = await stopMicrocks();
-        }
         // Containers should always be removed.
         const resDel = await deleteMicrocks();
       }
-      setIsLoading(false);
+      
+      setConfig(config);
+      if (appStatus.isRunning) {
+        setLaunched(true)
+      }
+      else {
+        setIsLoading(false)
+      }
     }
   };
 
