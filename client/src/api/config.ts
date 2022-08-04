@@ -18,7 +18,7 @@
  */
 import { ExtensionConfig } from '../types/ExtensionConfig';
 import { APPLICATION_PROPERTIES, FEATURES_PROPERTIES } from '../utils/config';
-import { execOnHost, throwErrorAsString } from './utils';
+import { execOnHost, isWindows, throwErrorAsString } from './utils';
 
 export async function initializeFileSystem(): Promise<boolean> {
   let cmdResult;
@@ -81,7 +81,7 @@ export async function writeExtensionConfig(config: ExtensionConfig) {
   let cmdResult;
   try {
     cmdResult = await execOnHost('writeconf.sh', 'writeconf.bat', 
-      ['"' + JSON.stringify(config).replaceAll('"', '\\"') + '"']
+      await isWindows() ? [JSON.stringify(config)]: ['"' + JSON.stringify(config).replaceAll('"', '\\"') + '"']
     );
   } catch (e: any) {
     throwErrorAsString(e);
