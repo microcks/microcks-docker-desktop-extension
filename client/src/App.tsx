@@ -138,6 +138,10 @@ const App = () => {
     console.log('useEffect() appStatus', appStatus);
     console.log('useEffect() isReady', isReady);
     console.log('useEffect() launched', launched);
+    if (Object.keys(appStatus).length == 0) {
+      console.log('init appStatus');
+      return;
+    }
     if (appStatus.isRunning) {
       if (isLoading) {
         ddClient.desktopUI.toast.success('Microcks is starting...');
@@ -172,7 +176,11 @@ const App = () => {
   }, [launched]);
 
   useEffect(() => {
-    console.log('isReady Changed', isReady);
+    console.log('isReady changed', isReady);
+    if (isReady == undefined) {
+      console.log('init isReady');
+      return;
+    }
     if (healthCheckInterval) {
       window.clearInterval(healthCheckInterval);
       setHealthCheckInterval(undefined);
@@ -185,8 +193,12 @@ const App = () => {
   }, [isReady]);
 
   useEffect(() => {
-    console.log('changed status isLoading', isLoading);
+    console.log('isLoading changed', isLoading);
   }, [isLoading]);
+
+  useEffect(() => {
+    console.log('status changed', status);
+  }, [status]);
 
   const initializeExtension = () => {
     getHome().then((result) => {
@@ -810,7 +822,7 @@ const App = () => {
           >
             <Box alignContent="flex-start" textAlign="left" flexGrow={1}>
               <Typography sx={{ fontWeight: 'bolder' }} variant="h5">
-                Microcks for Docker Desktop
+                Microcks
               </Typography>
               <Typography variant="subtitle1" color="InactiveCaptionText">
                 API Mocking and Testing for REST, GraphQL, gRPC and AsyncAPI
