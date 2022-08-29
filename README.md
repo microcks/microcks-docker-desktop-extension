@@ -1,6 +1,18 @@
-# microcks-docker-desktop-extension
+# Microcks Docker Extension
 
-Docker Desktop extension for running Microcks
+This extension tries to simplify the getting started experience for developers using Microcks in their local environments. This extension will start the components to run a local deployment of Microcks using container images.
+
+For any recommendations, suggestions, feature requests and issue, head over the the project's GitHub Issues tracker.
+
+## Install
+
+Since Docker Desktop v4.10 the extension CLI is included with the standard installation.
+
+To install the extension:
+
+```bash
+$ docker extension install microcks/microcks-docker-extension:latest
+```
 
 ## Build it locally
 
@@ -10,7 +22,7 @@ Build the extension image locally with `make build-extension`:
 $ make build-extension
 docker build --tag=microcks/microcks-docker-desktop-extension:latest .
 [...]
- => => naming to docker.io/microcks/microcks-docker-desktop-extension:latest 
+ => => naming to docker.io/microcks/microcks-docker-desktop-extension:latest
 ```
 
 Install the extension using the `docker extension` SDK and command:
