@@ -232,7 +232,7 @@ const App = () => {
 
   const launchMicrocks = async (event?: React.MouseEvent<HTMLSpanElement>) => {
     console.log('Launch Microcks!');
-    sendMetric('microcks_extension_launched', { config: config });
+    sendMetric('microcks_extension_launched', { asyncEnabled: config.asyncEnabled, portOffset: config.portOffset });
 
     setIsLoading(true);
 
@@ -315,6 +315,10 @@ const App = () => {
           'app',
           '-v',
           volumeDir + '/config:/deployments/config',
+          '-e',
+          'JAVA_OPTIONS=-XX:+TieredCompilation -XX:TieredStopAtLevel=2',
+          '-e',
+          'JAVA_MAJOR_VERSION=11',
           '-e',
           'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
           '-e',
@@ -543,7 +547,7 @@ const App = () => {
 
   const stopMicrocks = async (event?: React.MouseEvent<HTMLButtonElement>) => {
     console.log('Stopping Microcks...');
-    sendMetric('microcks_extension_stopped', { config: config });
+    sendMetric('microcks_extension_stopped', { asyncEnabled: config.asyncEnabled, portOffset: config.portOffset });
 
     setIsLoading(true);
     if (event) {

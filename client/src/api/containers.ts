@@ -44,7 +44,7 @@ export async function getContainerInfo(
         info.isRunning = true;
       }
       console.log('bindings', containerObj.HostConfig?.PortBindings);
-      if (Object.keys(containerObj.HostConfig?.PortBindings).length) {
+      if (Object.keys(containerObj.HostConfig?.PortBindings).length > 0) {
         info.mappedPort =
           containerObj.HostConfig?.PortBindings?.['8080/tcp'][0]?.HostPort;
       }

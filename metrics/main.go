@@ -21,24 +21,26 @@ func collect(w http.ResponseWriter, request *http.Request) {
 	// Read body from incoming request.
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
+		log.Default().Println("Got an error while parsing body")
+		log.Default().Fatal(err)
 	}
 
 	// Prepare request to Google Analytics with incoming body.
 	requestUrl := fmt.Sprintf("https://www.google-analytics.com/mp/collect?measurement_id=%s&api_secret=%s", measurementID, secretKey)
 	req, err := http.NewRequest(http.MethodPost, requestUrl, strings.NewReader(string(body)))
 	if err != nil {
+		log.Default().Println("Got an error while preparing request")
 		log.Default().Fatal(err)
 	}
 
 	// Execute post to Analytics backend.
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		log.Default().Println("Got an error while sending request")
 		log.Default().Fatal(err)
 	}
 
-	if resp.StatusCode != http.StatusNoContent {
-		log.Default().Printf("Status code for %s is %d", request.Body, resp.StatusCode)
-	}
+	log.Default().Printf("Status code for %s is %d\n", body, resp.StatusCode)
 
 	w.WriteHeader(201)
 }
