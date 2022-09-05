@@ -35,13 +35,8 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import {
-  getExtensionConfig,
-  getHome,
-  initializeFileSystem,
-  writeExtensionConfig,
-  writePropertiesFiles,
-} from './api/config';
+
+import { getExtensionConfig, getHome, initializeFileSystem, writeExtensionConfig, writePropertiesFiles } from './api/config';
 import { getContainerInfo } from './api/containers';
 import { sendMetric } from './api/metrics';
 import { ensureNetworkExists } from './api/network';
@@ -381,7 +376,7 @@ const App = () => {
             `${9092 + config.portOffset}:${9092 + config.portOffset}`,
             '-p',
             '19092:19092',
-            'vectorized/redpanda:v21.10.2',
+            'vectorized/redpanda:v22.2.2',
             `redpanda start --overprovisioned --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false --kafka-addr PLAINTEXT://0.0.0.0:19092,EXTERNAL://0.0.0.0:${
               9092 + config.portOffset
             } --advertise-kafka-addr PLAINTEXT://kafka:19092,EXTERNAL://localhost:${
