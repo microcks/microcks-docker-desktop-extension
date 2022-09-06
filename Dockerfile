@@ -28,14 +28,14 @@ LABEL org.opencontainers.image.title="Microcks" \
     com.docker.extension.detailed-description="<p>The Microcks Docker Desktop Extension allows you to easily run Microcks for mocking and testing all kinds of APIs.</p> \
         <h2 id="-features">✨ What can you do with Microcks?</h2> \
         <ul> \
-        <li>Mock REST APIs importing local OpenAPI specification or Postman collections,</li>
-        <li>Mock GraphQL APIs importing GraphQL Schema and samples via Postman collections,</li>
-        <li>Mock gRPC APIs importing Protobul and samples via Postman collections,</li>
-        <li>Simulate event-driven APIs (both on Kafka and WebSockets) importing AsyncAPI specification,</li>
-        <li>Test local REST, GraphQL, gRPC, WebSocket and Kafka endpoints to check conformance,</li>
-        <li>Bootstrap your API specification using Direct APIs!</li>
+        <li>Mock REST APIs importing local OpenAPI specification or Postman collections,</li> \
+        <li>Mock GraphQL APIs importing GraphQL Schema and samples via Postman collections,</li> \
+        <li>Mock gRPC APIs importing Protobul and samples via Postman collections,</li> \
+        <li>Simulate event-driven APIs (both on Kafka and WebSockets) importing AsyncAPI specification,</li> \
+        <li>Test local REST, GraphQL, gRPC, WebSocket and Kafka endpoints to check conformance,</li> \
+        <li>Bootstrap your API specification using Direct APIs!</li> \
         </ul> \
-    "\
+    " \
     com.docker.extension.publisher-url="https://www.microcks.io" \
     com.docker.extension.additional-urls="[{\"title\":\"Getting started\",\"url\":\"https://microcks.io/documentation/getting-started\"},{\"title\":\"Source code\",\"url\":\"https://github.com/microcks/microcks-docker-desktop-extension\"}]" \
     com.docker.extension.changelog=""
