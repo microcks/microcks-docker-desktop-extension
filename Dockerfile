@@ -9,6 +9,7 @@ RUN --mount=type=cache,target=/usr/local/share/.cache/yarn-${TARGETARCH} yarn
 # install
 COPY client /app/client
 RUN --mount=type=cache,target=/usr/local/share/.cache/yarn-${TARGETARCH} yarn build
+COPY docker-compose.yaml docker-compose.yaml
 
 
 FROM debian:bullseye-slim
