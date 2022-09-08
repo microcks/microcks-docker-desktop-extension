@@ -264,6 +264,8 @@ const App = () => {
               'mongo',
               '-v',
               volumeDir + '/data:/data/db',
+              "--label",
+              "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
               'mongo:3.4.23',
             ],
             { stream: buildStreamingOpts(MONGO_CONTAINER, setMongoStatus) },
@@ -287,6 +289,8 @@ const App = () => {
               EXTENSION_NETWORK,
               '--hostname',
               'postman',
+              "--label",
+              "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
               'quay.io/microcks/microcks-postman-runtime:latest',
             ],
             {
@@ -336,6 +340,8 @@ const App = () => {
           `${8080 + config.portOffset}:8080`,
           '-p',
           `${9090 + config.portOffset}:9090`,
+          "--label",
+          "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
           'quay.io/microcks/microcks:latest',
         ];
         if (!appStatus.exists) {
@@ -370,6 +376,8 @@ const App = () => {
             KAFKA_CONTAINER,
             '--network',
             EXTENSION_NETWORK,
+            "--label",
+            "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
             '--hostname',
             'kafka',
             '-p',
@@ -425,6 +433,8 @@ const App = () => {
                 'on-failure',
                 '-p',
                 `${8081 + config.portOffset}:8081`,
+                "--label",
+                "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
                 'quay.io/microcks/microcks-async-minion:latest',
               ],
               {

@@ -7,6 +7,9 @@
       "src": "index.html"
     }
   },
+  "vm": {
+    "composefile": "docker-compose.yaml"
+  },
   "host": {
     "binaries": [
       {
