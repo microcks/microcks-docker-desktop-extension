@@ -21,7 +21,7 @@ LABEL org.opencontainers.image.title="Microcks" \
     com.docker.extension.screenshots="[ \
         {\"alt\": \"Welcome page - light screenshot\", \"url\": \"https://raw.githubusercontent.com/microcks/microcks-docker-desktop-extension/main/resources/screenshots/1.png\"}, \
         {\"alt\": \"Welcome page - dark screenshot\", \"url\": \"https://raw.githubusercontent.com/microcks/microcks-docker-desktop-extension/main/resources/screenshots/2.png\"}, \
-        {\"alt\": \"Settings pane - light screenshot\", \"url\": \"https://raw.githubusercontent.com/jfrog/microcks-docker-desktop-extension/main/resources/screenshots/3.png\"}, \
+        {\"alt\": \"Settings pane - light screenshot\", \"url\": \"https://raw.githubusercontent.com/microcks/microcks-docker-desktop-extension/main/resources/screenshots/3.png\"}, \
         {\"alt\": \"Settings pane - dark screenshot\", \"url\": \"https://raw.githubusercontent.com/microcks/microcks-docker-desktop-extension/main/resources/screenshots/4.png\"}, \
         {\"alt\": \"Running - light screenshot\", \"url\": \"https://raw.githubusercontent.com/microcks/microcks-docker-desktop-extension/main/resources/screenshots/5.png\"}, \
         {\"alt\": \"Running - light screenshot\", \"url\": \"https://raw.githubusercontent.com/microcks/microcks-docker-desktop-extension/main/resources/screenshots/6.png\"} \
