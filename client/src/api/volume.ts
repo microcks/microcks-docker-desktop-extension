@@ -18,23 +18,23 @@
  */
 import { createDockerDesktopClient } from "@docker/extension-api-client";
 
-import { EXTENSION_NETWORK } from "../utils/constants";
+import { EXTENSION_VOLUME } from "../utils/constants";
 import { throwErrorAsString } from "./utils";
 
 const ddClient = createDockerDesktopClient();
 
-export async function ensureNetworkExists(): Promise<boolean> {
-  console.info('Ensuring a bridge network exists for extension...');
-  let networkResult;
+export async function ensureVolumeExists(): Promise<boolean> {
+  console.info('Ensuring a volume exists for extension data...');
+  let volumeResult;
   try {
-    networkResult = await ddClient.docker.cli.exec("network", ["inspect", EXTENSION_NETWORK]);
+    volumeResult = await ddClient.docker.cli.exec("volume", ["inspect", EXTENSION_VOLUME]);
   } catch (e: any) {
-    if (e.stderr !== undefined && (e.stderr.includes('No such network'))) {
-      // Create missing network for our extension.
-      console.info('Creating a bridge network for extension.');
+    if (e.stderr !== undefined && (e.stderr.includes('No such volume'))) {
+      // Create missing volume for our extension.
+      console.info('Creating a volume for extension data.');
       try {
-        networkResult = await ddClient.docker.cli.exec("network", ["create",
-          "--label", "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension", "--driver", "bridge", EXTENSION_NETWORK]);
+        volumeResult = await ddClient.docker.cli.exec("volume", ["create",
+          "--label", "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension", EXTENSION_VOLUME]);
       } catch (ee: any) {
         throwErrorAsString(ee);
       }

@@ -40,13 +40,15 @@ import { getExtensionConfig, getHome, initializeFileSystem, writeExtensionConfig
 import { getContainerInfo } from './api/containers';
 import { sendMetric } from './api/metrics';
 import { ensureNetworkExists } from './api/network';
+import { ensureVolumeExists } from './api/volume';
 import './App.css';
 import DeleteDialog from './components/DeleteDialog';
 import Footer from './components/Footer';
 import Settings from './components/Settings';
 import { ContainerStatus } from './types/ContainerStatus';
 import { ExtensionConfig } from './types/ExtensionConfig';
-import { EXTENSION_NETWORK } from './utils/constants';
+import { EXTENSION_NETWORK, EXTENSION_VOLUME } from './utils/constants';
+
 
 const client = createDockerDesktopClient();
 
@@ -241,215 +243,224 @@ const App = () => {
     */
 
     const res = await ensureNetworkExists();
-
     console.log('network result', res);
+
     if (res) {
-      const volumeDir = isWindows()
-        ? `//${appDir.replace(/\\/g, '/').replace('C:', 'c')}`
-        : appDir;
+      const volumeRes = await ensureVolumeExists();
+      console.log('volume result', volumeRes);
 
-      console.log('mongostatus', mongoStatus);
-      if (mongoStatus && !mongoStatus.isRunning) {
-        if (!mongoStatus.exists) {
-          console.log('Creating ', MONGO_CONTAINER);
-          const mongoRes = ddClient.docker.cli.exec(
-            'run',
-            [
-              '-d',
-              '--name',
-              MONGO_CONTAINER,
-              '--network',
-              EXTENSION_NETWORK,
-              '--hostname',
-              'mongo',
-              '-v',
-              volumeDir + '/data:/data/db',
-              "--label",
-              "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
-              'mongo:3.4.23',
-            ],
-            { stream: buildStreamingOpts(MONGO_CONTAINER, setMongoStatus) },
-          );
-        } else {
-          startContainer(MONGO_CONTAINER);
+      if (volumeRes) {
+        const volumeDir = isWindows()
+          ? `//${appDir.replace(/\\/g, '/').replace('C:', 'c')}`
+          : appDir;
+
+        console.log('mongostatus', mongoStatus);
+        if (mongoStatus && !mongoStatus.isRunning) {
+          if (!mongoStatus.exists) {
+            console.log('Creating ', MONGO_CONTAINER);
+            const mongoRes = ddClient.docker.cli.exec(
+              'run',
+              [
+                '-d',
+                '--name',
+                MONGO_CONTAINER,
+                '--network',
+                EXTENSION_NETWORK,
+                '--hostname',
+                'mongo',
+                '-v',
+                //volumeDir + '/data:/data/db',
+                EXTENSION_VOLUME + ':/data/db',
+                "--label",
+                "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+                'mongo:3.4.23',
+              ],
+              { stream: buildStreamingOpts(MONGO_CONTAINER, setMongoStatus) },
+            );
+          } else {
+            startContainer(MONGO_CONTAINER);
+          }
         }
-      }
 
-      console.log('postmanstatus', postmanStatus);
-      if (postmanStatus && !postmanStatus.isRunning) {
-        if (!postmanStatus.exists) {
-          console.log('Creating ', POSTMAN_CONTAINER);
-          const postmanRes = ddClient.docker.cli.exec(
-            'run',
-            [
-              '-d',
-              '--name',
-              POSTMAN_CONTAINER,
-              '--network',
-              EXTENSION_NETWORK,
-              '--hostname',
-              'postman',
-              "--label",
-              "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
-              'quay.io/microcks/microcks-postman-runtime:latest',
-            ],
-            {
-              stream: buildStreamingOpts(POSTMAN_CONTAINER, setPostmanStatus),
-            },
-          );
-        } else {
-          startContainer(POSTMAN_CONTAINER);
+        console.log('postmanstatus', postmanStatus);
+        if (postmanStatus && !postmanStatus.isRunning) {
+          if (!postmanStatus.exists) {
+            console.log('Creating ', POSTMAN_CONTAINER);
+            const postmanRes = ddClient.docker.cli.exec(
+              'run',
+              [
+                '-d',
+                '--name',
+                POSTMAN_CONTAINER,
+                '--network',
+                EXTENSION_NETWORK,
+                '--hostname',
+                'postman',
+                "--label",
+                "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+                'quay.io/microcks/microcks-postman-runtime:latest',
+              ],
+              {
+                stream: buildStreamingOpts(POSTMAN_CONTAINER, setPostmanStatus),
+              },
+            );
+          } else {
+            startContainer(POSTMAN_CONTAINER);
+          }
         }
-      }
 
-      console.log('appstatus', appStatus);
-      if (appStatus && !appStatus.isRunning) {
-        const params = [
-          '-d',
-          '--name',
-          APP_CONTAINER,
-          '--network',
-          EXTENSION_NETWORK,
-          '--hostname',
-          'app',
-          '-v',
-          volumeDir + '/config:/deployments/config',
-          '-e',
-          'JAVA_OPTIONS=-XX:+TieredCompilation -XX:TieredStopAtLevel=2',
-          '-e',
-          'JAVA_MAJOR_VERSION=11',
-          '-e',
-          'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
-          '-e',
-          'SPRING_PROFILES_ACTIVE=prod',
-          '-e',
-          'KEYCLOAK_ENABLED=false',
-          '-e',
-          'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
-          '-e',
-          'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
-          '-e',
-          'SPRING_DATA_MONGODB_DATABASE=microcks',
-          '-e',
-          'TEST_CALLBACK_URL=http://microcks:8080',
-          '-e',
-          'ASYNC_MINION_URL=http://microcks-async-minion:8081',
-          '-e',
-          'POSTMAN_RUNNER_URL=http://postman:3000',
-          '-p',
-          `${8080 + config.portOffset}:8080`,
-          '-p',
-          `${9090 + config.portOffset}:9090`,
-          "--label",
-          "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
-          'quay.io/microcks/microcks:latest',
-        ];
-        if (!appStatus.exists) {
-          console.log('Creating ', APP_CONTAINER);
-          const result = await runContainer(
+        console.log('appstatus', appStatus);
+        if (appStatus && !appStatus.isRunning) {
+          const params = [
+            '-d',
+            '--name',
             APP_CONTAINER,
-            params,
-            setAppStatus,
-          );
-        } else {
-          if (appStatus.mappedPort != 8080 + config.portOffset) {
-            const removeRes = await removeContainer(APP_CONTAINER);
-            const runRes = await runContainer(
+            '--network',
+            EXTENSION_NETWORK,
+            '--hostname',
+            'app',
+            '-v',
+            volumeDir + '/config:/deployments/config',
+            '-e',
+            'JAVA_OPTIONS=-XX:+TieredCompilation -XX:TieredStopAtLevel=2',
+            '-e',
+            'JAVA_MAJOR_VERSION=11',
+            '-e',
+            'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
+            '-e',
+            'SPRING_PROFILES_ACTIVE=prod',
+            '-e',
+            'KEYCLOAK_ENABLED=false',
+            '-e',
+            'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
+            '-e',
+            'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
+            '-e',
+            'SPRING_DATA_MONGODB_DATABASE=microcks',
+            '-e',
+            'TEST_CALLBACK_URL=http://microcks:8080',
+            '-e',
+            'ASYNC_MINION_URL=http://microcks-async-minion:8081',
+            '-e',
+            'POSTMAN_RUNNER_URL=http://postman:3000',
+            '-p',
+            `${8080 + config.portOffset}:8080`,
+            '-p',
+            `${9090 + config.portOffset}:9090`,
+            "--label",
+            "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+            'quay.io/microcks/microcks:latest',
+          ];
+          if (!appStatus.exists) {
+            console.log('Creating ', APP_CONTAINER);
+            const result = await runContainer(
               APP_CONTAINER,
               params,
               setAppStatus,
             );
           } else {
-            startContainer(APP_CONTAINER);
+            if (appStatus.mappedPort != 8080 + config.portOffset) {
+              const removeRes = await removeContainer(APP_CONTAINER);
+              const runRes = await runContainer(
+                APP_CONTAINER,
+                params,
+                setAppStatus,
+              );
+            } else {
+              startContainer(APP_CONTAINER);
+            }
           }
         }
-      }
 
-      if (config.asyncEnabled) {
-        console.log(
-          'Async configuration is enabled, launching async related containers...',
-        );
-        if (kafkaStatus && !kafkaStatus.isRunning) {
-          const params = [
-            '-d',
-            '--name',
-            KAFKA_CONTAINER,
-            '--network',
-            EXTENSION_NETWORK,
-            "--label",
-            "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
-            '--hostname',
-            'kafka',
-            '-p',
-            `${9092 + config.portOffset}:${9092 + config.portOffset}`,
-            '-p',
-            '19092:19092',
-            'vectorized/redpanda:v22.2.2',
-            `redpanda start --overprovisioned --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false --kafka-addr PLAINTEXT://0.0.0.0:19092,EXTERNAL://0.0.0.0:${
-              9092 + config.portOffset
-            } --advertise-kafka-addr PLAINTEXT://kafka:19092,EXTERNAL://localhost:${
-              9092 + config.portOffset
-            }`,
-          ];
-          if (!kafkaStatus.exists) {
-            console.log('Creating ', KAFKA_CONTAINER);
-            const result = await runContainer(
+        if (config.asyncEnabled) {
+          console.log(
+            'Async configuration is enabled, launching async related containers...',
+          );
+          if (kafkaStatus && !kafkaStatus.isRunning) {
+            const params = [
+              '-d',
+              '--name',
               KAFKA_CONTAINER,
-              params,
-              setKafkaStatus,
-            );
-          } else {
-            if (kafkaStatus.mappedPort != 9092 + config.portOffset) {
-              const removeRes = await removeContainer(KAFKA_CONTAINER);
-              const runRes = await runContainer(
+              '--network',
+              EXTENSION_NETWORK,
+              "--label",
+              "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+              '--hostname',
+              'kafka',
+              '-p',
+              `${9092 + config.portOffset}:${9092 + config.portOffset}`,
+              '-p',
+              '19092:19092',
+              'vectorized/redpanda:v22.2.2',
+              `redpanda start --overprovisioned --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false --kafka-addr PLAINTEXT://0.0.0.0:19092,EXTERNAL://0.0.0.0:${
+                9092 + config.portOffset
+              } --advertise-kafka-addr PLAINTEXT://kafka:19092,EXTERNAL://localhost:${
+                9092 + config.portOffset
+              }`,
+            ];
+            if (!kafkaStatus.exists) {
+              console.log('Creating ', KAFKA_CONTAINER);
+              const result = await runContainer(
                 KAFKA_CONTAINER,
                 params,
                 setKafkaStatus,
               );
             } else {
-              startContainer(KAFKA_CONTAINER);
+              if (kafkaStatus.mappedPort != 9092 + config.portOffset) {
+                const removeRes = await removeContainer(KAFKA_CONTAINER);
+                const runRes = await runContainer(
+                  KAFKA_CONTAINER,
+                  params,
+                  setKafkaStatus,
+                );
+              } else {
+                startContainer(KAFKA_CONTAINER);
+              }
+            }
+          }
+
+          if (asyncMinionStatus && !asyncMinionStatus.isRunning) {
+            if (!asyncMinionStatus.exists) {
+              console.log('Creating ', ASYNC_MINION_CONTAINER);
+              const minionRes = ddClient.docker.cli.exec(
+                'run',
+                [
+                  '-d',
+                  '--name',
+                  ASYNC_MINION_CONTAINER,
+                  '--network',
+                  EXTENSION_NETWORK,
+                  '--hostname',
+                  'microcks-async-minion',
+                  '-v',
+                  volumeDir + '/config:/deployments/config',
+                  '-e',
+                  'QUARKUS_PROFILE=docker-compose',
+                  '--restart',
+                  'on-failure',
+                  '-p',
+                  `${8081 + config.portOffset}:8081`,
+                  "--label",
+                  "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+                  'quay.io/microcks/microcks-async-minion:latest',
+                ],
+                {
+                  stream: buildStreamingOpts(
+                    ASYNC_MINION_CONTAINER,
+                    setAsyncMinionStatus,
+                  ),
+                },
+              );
+            } else {
+              const minionRes = ddClient.docker.cli.exec('start', [
+                ASYNC_MINION_CONTAINER,
+              ]);
             }
           }
         }
-
-        if (asyncMinionStatus && !asyncMinionStatus.isRunning) {
-          if (!asyncMinionStatus.exists) {
-            console.log('Creating ', ASYNC_MINION_CONTAINER);
-            const minionRes = ddClient.docker.cli.exec(
-              'run',
-              [
-                '-d',
-                '--name',
-                ASYNC_MINION_CONTAINER,
-                '--network',
-                EXTENSION_NETWORK,
-                '--hostname',
-                'microcks-async-minion',
-                '-v',
-                volumeDir + '/config:/deployments/config',
-                '-e',
-                'QUARKUS_PROFILE=docker-compose',
-                '--restart',
-                'on-failure',
-                '-p',
-                `${8081 + config.portOffset}:8081`,
-                "--label",
-                "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
-                'quay.io/microcks/microcks-async-minion:latest',
-              ],
-              {
-                stream: buildStreamingOpts(
-                  ASYNC_MINION_CONTAINER,
-                  setAsyncMinionStatus,
-                ),
-              },
-            );
-          } else {
-            const minionRes = ddClient.docker.cli.exec('start', [
-              ASYNC_MINION_CONTAINER,
-            ]);
-          }
-        }
+      } else {
+        // TODO: Manage this low-level error.
+        console.error('Error while ensuring extension volume exists');  
       }
     } else {
       // TODO: Manage this low-level error.

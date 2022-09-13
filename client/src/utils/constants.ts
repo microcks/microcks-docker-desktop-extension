@@ -18,3 +18,5 @@
  */
 
 export const EXTENSION_NETWORK: string = "microcks-extension-network";
+
+export const EXTENSION_VOLUME: string = "microcks-extension-volume";
