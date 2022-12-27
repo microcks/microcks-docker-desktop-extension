@@ -15,6 +15,7 @@ import { useDockerDesktopClient } from '../utils/ddclient';
 import { Collapse, IconButton, Link } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { ExtensionConfig } from '../types/ExtensionConfig';
 
 type Service = {
@@ -67,7 +68,7 @@ const Services = (props: { config: ExtensionConfig }) => {
 
     return (
       <React.Fragment>
-        <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+        <TableRow sx={{ '& > *': { borderBottom: 'none' } }}>
           <TableCell width="5%">
             <IconButton
               aria-label="expand row"
@@ -104,53 +105,93 @@ const Services = (props: { config: ExtensionConfig }) => {
           </TableCell>
         </TableRow>
         <TableRow>
-          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
             <Collapse in={open} timeout="auto" unmountOnExit>
-              <Box sx={{ margin: 1 }}>
-                <Typography variant="h6" gutterBottom component="div">
-                  Operations:
-                </Typography>
-                {row.operations.map((operation) => (
-                  <Box key={operation.name} my={1}>
-                    <Chip
-                      label={operation.method}
-                      sx={{
-                        borderRadius: '0',
-                        color: 'white',
-                        backgroundColor:
-                          operation.method == 'GET'
-                            ? 'green'
-                            : operation.method == 'POST'
-                            ? '#ec7a08'
-                            : operation.method == 'DELETE'
-                            ? '#c00'
-                            : '#39a5dc',
-                      }}
-                    ></Chip>
-                    <Typography variant="body1" component="span" mx={2}>
-                      {operation.name}{' '}
-                      <Link
-                        onClick={() =>
-                          ddClient.host.openExternal(
-                            `http://localhost:${
-                              8080 + config.portOffset
-                            }/dynarest/${row.name.replace(' ', '+')}/${
-                              row.version
-                            }${operation.name.split(' ')[1]}`,
-                          )
-                        }
-                        variant="subtitle1"
-                        component="button"
-                      >
-                        http://localhost:
-                        {8080 + config.portOffset}
-                        /dynarest/
-                        {row.name.replace(' ', '+')}/{row.version}
-                        {operation.name.split(' ')[1]}
-                      </Link>
-                    </Typography>
-                  </Box>
-                ))}
+              <Box margin={1} paddingBottom={2}>
+                <TableContainer>
+                  <Table size="small" aria-label="operations">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Method</TableCell>
+                        <TableCell>Path</TableCell>
+                        <TableCell>Mock URL</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {row.operations
+                        .sort((a, b) => a.name.length - b.name.length)
+                        .map((operation) => (
+                          <TableRow key={operation.name}>
+                            <TableCell component="th" scope="row">
+                              <Chip
+                                label={operation.method}
+                                sx={{
+                                  borderRadius: '0',
+                                  color: 'white',
+                                  backgroundColor:
+                                    operation.method == 'GET'
+                                      ? 'green'
+                                      : operation.method == 'POST'
+                                      ? '#ec7a08'
+                                      : operation.method == 'DELETE'
+                                      ? '#c00'
+                                      : '#39a5dc',
+                                }}
+                              ></Chip>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body1" component="span">
+                                {operation.name}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              {config.asyncEnabled ? (
+                                <Link
+                                  onClick={() =>
+                                    ddClient.host.openExternal(
+                                      `http://localhost:${
+                                        8080 + config.portOffset
+                                      }/dynarest/${row.name.replace(
+                                        ' ',
+                                        '+',
+                                      )}/${row.version}${
+                                        operation.name.split(' ')[1]
+                                      }`,
+                                    )
+                                  }
+                                  variant="subtitle1"
+                                  component="span"
+                                >
+                                  http://localhost:
+                                  {8080 + config.portOffset}
+                                  /dynarest/
+                                  {row.name.replace(' ', '+')}/{row.version}
+                                  {operation.name.split(' ')[1]}
+                                </Link>
+                              ) : (
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                  }}
+                                >
+                                  <WarningAmberIcon />
+                                  <Typography
+                                    variant="body1"
+                                    component="span"
+                                    marginLeft={1}
+                                  >
+                                    Async APIs are disabled
+                                  </Typography>
+                                </Box>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Box>
             </Collapse>
           </TableCell>
