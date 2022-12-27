@@ -837,7 +837,12 @@ const App = () => {
           </Footer>
         </>
       ) : (
-        <>
+        <Box
+          display="flex"
+          flexDirection="column"
+          justifyContent="flex-start"
+          height="95vh"
+        >
           <Box
             sx={{ display: 'flex', width: '100%', alignItems: 'center' }}
             my={1}
@@ -897,7 +902,7 @@ const App = () => {
                     )
                   }
                   variant="subtitle1"
-                  component="button"
+                  component="span"
                 >
                   http://localhost:{8080 + config.portOffset}
                 </Link>
@@ -912,7 +917,7 @@ const App = () => {
               </Link>
             )}
           </Footer>
-        </>
+        </Box>
       )}
       <Settings
         config={config}
