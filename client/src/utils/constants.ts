@@ -17,6 +17,10 @@
  * under the License.
  */
 
-export const EXTENSION_NETWORK: string = "microcks-extension-network";
-
-export const EXTENSION_VOLUME: string = "microcks-extension-volume";
+export const EXTENSION_NETWORK: string = 'microcks-extension-network';
+export const EXTENSION_VOLUME: string = 'microcks-extension-volume';
+export const APP_CONTAINER: string = 'microcks';
+export const POSTMAN_CONTAINER: string = 'microcks-postman';
+export const MONGO_CONTAINER: string = 'microcks-mongodb';
+export const KAFKA_CONTAINER: string = 'microcks-kafka';
+export const ASYNC_MINION_CONTAINER: string = 'microcks-async-minion';
