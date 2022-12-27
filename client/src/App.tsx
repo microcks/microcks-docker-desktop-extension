@@ -35,6 +35,7 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 import {
   getExtensionConfig,
@@ -893,7 +894,7 @@ const App = () => {
               display="flex"
               alignItems="center"
             >
-              <Typography variant="subtitle1">
+              <Typography variant="subtitle1" component="span">
                 Microcks is running. To access the UI navigate to:{' '}
                 <Link
                   onClick={() =>
@@ -905,6 +906,10 @@ const App = () => {
                   component="span"
                 >
                   http://localhost:{8080 + config.portOffset}
+                  <OpenInNewIcon
+                    fontSize="small"
+                    style={{ verticalAlign: 'middle' }}
+                  />
                 </Link>
               </Typography>
             </Box>

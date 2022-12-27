@@ -16,6 +16,7 @@ import { Collapse, IconButton, Link } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { ExtensionConfig } from '../types/ExtensionConfig';
 
 type Service = {
@@ -88,20 +89,19 @@ const Services = (props: { config: ExtensionConfig }) => {
               Version: {row.version}
             </Typography>
           </TableCell>
-          <TableCell width="10%" align="right">
-            <Chip
-              label={
-                row.type.startsWith('GENERIC_')
-                  ? `DIRECT ${row.type.split('_')[1]}`
-                  : row.type
-              }
+          <TableCell width="20%" align="right">
+            <Typography
+              variant="h6"
+              fontWeight="bold"
               sx={{
-                backgroundColor: '#9c27b0',
-                color: 'white',
-                borderRadius: '0',
+                color: '#9c27b0',
               }}
               component="span"
-            />
+            >
+              {row.type.startsWith('GENERIC_')
+                ? `${row.type.split('_')[1]}`
+                : row.type}
+            </Typography>
           </TableCell>
         </TableRow>
         <TableRow>
@@ -123,12 +123,12 @@ const Services = (props: { config: ExtensionConfig }) => {
                         .map((operation) => (
                           <TableRow key={operation.name}>
                             <TableCell component="th" scope="row">
-                              <Chip
-                                label={operation.method}
+                              <Typography
+                                fontWeight="bold"
+                                variant="h6"
                                 sx={{
                                   borderRadius: '0',
-                                  color: 'white',
-                                  backgroundColor:
+                                  color:
                                     operation.method == 'GET'
                                       ? 'green'
                                       : operation.method == 'POST'
@@ -137,7 +137,9 @@ const Services = (props: { config: ExtensionConfig }) => {
                                       ? '#c00'
                                       : '#39a5dc',
                                 }}
-                              ></Chip>
+                              >
+                                {operation.method}
+                              </Typography>
                             </TableCell>
                             <TableCell>
                               <Typography variant="body1" component="span">
@@ -145,7 +147,25 @@ const Services = (props: { config: ExtensionConfig }) => {
                               </Typography>
                             </TableCell>
                             <TableCell>
-                              {config.asyncEnabled ? (
+                              {row.type.includes('EVENT') &&
+                              !config.asyncEnabled ? (
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                  }}
+                                >
+                                  <WarningAmberIcon />
+                                  <Typography
+                                    variant="body1"
+                                    component="span"
+                                    marginLeft={1}
+                                  >
+                                    Async APIs are disabled
+                                  </Typography>
+                                </Box>
+                              ) : (
                                 <Link
                                   onClick={() =>
                                     ddClient.host.openExternal(
@@ -166,25 +186,12 @@ const Services = (props: { config: ExtensionConfig }) => {
                                   {8080 + config.portOffset}
                                   /dynarest/
                                   {row.name.replace(' ', '+')}/{row.version}
-                                  {operation.name.split(' ')[1]}
+                                  {operation.name.split(' ')[1]}{' '}
+                                  <OpenInNewIcon
+                                    fontSize="small"
+                                    style={{ verticalAlign: 'middle' }}
+                                  />
                                 </Link>
-                              ) : (
-                                <Box
-                                  sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap',
-                                  }}
-                                >
-                                  <WarningAmberIcon />
-                                  <Typography
-                                    variant="body1"
-                                    component="span"
-                                    marginLeft={1}
-                                  >
-                                    Async APIs are disabled
-                                  </Typography>
-                                </Box>
                               )}
                             </TableCell>
                           </TableRow>
