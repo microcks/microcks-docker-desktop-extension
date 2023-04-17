@@ -21,7 +21,7 @@ import Typography from '@mui/material/Typography';
 
 const Footer: React.FC = ({ children }) => {
   return (
-    <Box className="Footer">
+    <Box textAlign="center" paddingBottom={3} marginTop="auto">
       {children}
       <Typography color="InactiveCaptionText">
         Copyright 2022 Microcks. All rights reserved.

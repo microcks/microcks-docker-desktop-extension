@@ -35,8 +35,15 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
-import { getExtensionConfig, getHome, initializeFileSystem, writeExtensionConfig, writePropertiesFiles } from './api/config';
+import {
+  getExtensionConfig,
+  getHome,
+  initializeFileSystem,
+  writeExtensionConfig,
+  writePropertiesFiles,
+} from './api/config';
 import { getContainerInfo } from './api/containers';
 import { sendMetric } from './api/metrics';
 import { ensureNetworkExists } from './api/network';
@@ -47,25 +54,23 @@ import Footer from './components/Footer';
 import Settings from './components/Settings';
 import { ContainerStatus } from './types/ContainerStatus';
 import { ExtensionConfig } from './types/ExtensionConfig';
-import { EXTENSION_NETWORK, EXTENSION_VOLUME } from './utils/constants';
-
-
-const client = createDockerDesktopClient();
-
-const useDockerDesktopClient = () => {
-  return client;
-};
+import {
+  APP_CONTAINER,
+  ASYNC_MINION_CONTAINER,
+  EXTENSION_NETWORK,
+  EXTENSION_VOLUME,
+  KAFKA_CONTAINER,
+  MONGO_CONTAINER,
+  POSTMAN_CONTAINER,
+} from './utils/constants';
+import Services from './components/Services';
+import { useDockerDesktopClient } from './utils/ddclient';
 
 const isWindows = () => {
-  let windowsSystem = navigator.platform.startsWith('Win');
+  const platform = useDockerDesktopClient().host.platform;
+  console.log('Current platform: [%s]', platform);
+  const windowsSystem = platform.toLowerCase().startsWith('win');
   return windowsSystem;
-};
-
-type Service = {
-  id: string;
-  name: string;
-  version: string;
-  type: string;
 };
 
 const App = () => {
@@ -93,16 +98,8 @@ const App = () => {
 
   const [healthCheckInterval, setHealthCheckInterval] = useState<number>();
 
-  const [services, setServices] = useState<Service[]>([]);
-
   const [appDir, setAppDir] = useState('');
   const [config, setConfig] = useState<ExtensionConfig>({} as ExtensionConfig);
-
-  const APP_CONTAINER: string = 'microcks';
-  const POSTMAN_CONTAINER: string = 'microcks-postman';
-  const MONGO_CONTAINER: string = 'microcks-mongodb';
-  const KAFKA_CONTAINER: string = 'microcks-kafka';
-  const ASYNC_MINION_CONTAINER: string = 'microcks-async-minion';
 
   useEffect(() => {
     const isSystemInDarkMode = window.matchMedia(
@@ -229,7 +226,10 @@ const App = () => {
 
   const launchMicrocks = async (event?: React.MouseEvent<HTMLSpanElement>) => {
     console.log('Launch Microcks!');
-    sendMetric('microcks_extension_launched', { asyncEnabled: config.asyncEnabled, portOffset: config.portOffset });
+    sendMetric('microcks_extension_launched', {
+      asyncEnabled: config.asyncEnabled,
+      portOffset: config.portOffset,
+    });
 
     setIsLoading(true);
 
@@ -271,8 +271,8 @@ const App = () => {
                 '-v',
                 //volumeDir + '/data:/data/db',
                 EXTENSION_VOLUME + ':/data/db',
-                "--label",
-                "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+                '--label',
+                'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
                 'mongo:3.4.23',
               ],
               { stream: buildStreamingOpts(MONGO_CONTAINER, setMongoStatus) },
@@ -296,8 +296,8 @@ const App = () => {
                 EXTENSION_NETWORK,
                 '--hostname',
                 'postman',
-                "--label",
-                "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+                '--label',
+                'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
                 'quay.io/microcks/microcks-postman-runtime:latest',
               ],
               {
@@ -347,8 +347,8 @@ const App = () => {
             `${8080 + config.portOffset}:8080`,
             '-p',
             `${9090 + config.portOffset}:9090`,
-            "--label",
-            "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+            '--label',
+            'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
             'quay.io/microcks/microcks:latest',
           ];
           if (!appStatus.exists) {
@@ -383,8 +383,8 @@ const App = () => {
               KAFKA_CONTAINER,
               '--network',
               EXTENSION_NETWORK,
-              "--label",
-              "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+              '--label',
+              'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
               '--hostname',
               'kafka',
               '-p',
@@ -440,8 +440,8 @@ const App = () => {
                   'on-failure',
                   '-p',
                   `${8081 + config.portOffset}:8081`,
-                  "--label",
-                  "com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension",
+                  '--label',
+                  'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
                   'quay.io/microcks/microcks-async-minion:latest',
                 ],
                 {
@@ -460,7 +460,7 @@ const App = () => {
         }
       } else {
         // TODO: Manage this low-level error.
-        console.error('Error while ensuring extension volume exists');  
+        console.error('Error while ensuring extension volume exists');
       }
     } else {
       // TODO: Manage this low-level error.
@@ -563,7 +563,10 @@ const App = () => {
 
   const stopMicrocks = async (event?: React.MouseEvent<HTMLButtonElement>) => {
     console.log('Stopping Microcks...');
-    sendMetric('microcks_extension_stopped', { asyncEnabled: config.asyncEnabled, portOffset: config.portOffset });
+    sendMetric('microcks_extension_stopped', {
+      asyncEnabled: config.asyncEnabled,
+      portOffset: config.portOffset,
+    });
 
     setIsLoading(true);
     if (event) {
@@ -835,7 +838,12 @@ const App = () => {
           </Footer>
         </>
       ) : (
-        <>
+        <Box
+          display="flex"
+          flexDirection="column"
+          justifyContent="flex-start"
+          height="95vh"
+        >
           <Box
             sx={{ display: 'flex', width: '100%', alignItems: 'center' }}
             my={1}
@@ -886,7 +894,7 @@ const App = () => {
               display="flex"
               alignItems="center"
             >
-              <Typography variant="subtitle1">
+              <Typography variant="subtitle1" component="span">
                 Microcks is running. To access the UI navigate to:{' '}
                 <Link
                   onClick={() =>
@@ -895,13 +903,18 @@ const App = () => {
                     )
                   }
                   variant="subtitle1"
-                  component="button"
+                  component="span"
                 >
                   http://localhost:{8080 + config.portOffset}
+                  <OpenInNewIcon
+                    fontSize="small"
+                    style={{ verticalAlign: 'middle' }}
+                  />
                 </Link>
               </Typography>
             </Box>
           </Paper>
+          <Services config={config} />
           <Footer>
             {appStatus.exists && (
               <Link onClick={deleteMicrocksDialog} component="button">
@@ -909,7 +922,7 @@ const App = () => {
               </Link>
             )}
           </Footer>
-        </>
+        </Box>
       )}
       <Settings
         config={config}
