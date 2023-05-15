@@ -65,6 +65,8 @@ import {
 } from './utils/constants';
 import Services from './components/Services';
 import { useDockerDesktopClient } from './utils/ddclient';
+import { ExecStreamOptions } from '@docker/extension-api-client-types/dist/v1';
+import AlertDialog from './components/AlertDialog';
 
 const isWindows = () => {
   const platform = useDockerDesktopClient().host.platform;
@@ -81,6 +83,9 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSettingsDialog, setIsSettingsDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openAlertDialog, setOpenAlertDialog] = useState(false);
+
+  const [alertDialogData, setAlertDialogData] = useState({title:'',text:''});
 
   const [appStatus, setAppStatus] = useState({} as ContainerStatus);
   const [postmanStatus, setPostmanStatus] = useState({} as ContainerStatus);
@@ -508,28 +513,33 @@ const App = () => {
 
   const startContainer = async (container: string) => {
     console.log('Starting ', container);
-    const result = await ddClient.docker.cli.exec('start', [container]);
-    if (!result.code) {
-      switch (container) {
-        case APP_CONTAINER:
-          setAppStatus({ ...appStatus, isRunning: true });
-          break;
-        case MONGO_CONTAINER:
-          setMongoStatus({ ...mongoStatus, isRunning: true });
-          break;
-        case POSTMAN_CONTAINER:
-          setPostmanStatus({ ...postmanStatus, isRunning: true });
-          break;
-        case KAFKA_CONTAINER:
-          setKafkaStatus({ ...kafkaStatus, isRunning: true });
-          break;
-        case ASYNC_MINION_CONTAINER:
-          setAsyncMinionStatus({ ...asyncMinionStatus, isRunning: true });
-          break;
+    try {
+      const result = await ddClient.docker.cli.exec('start', [container]);
+      if (!result.code) {
+        switch (container) {
+          case APP_CONTAINER:
+            setAppStatus({ ...appStatus, isRunning: true });
+            break;
+          case MONGO_CONTAINER:
+            setMongoStatus({ ...mongoStatus, isRunning: true });
+            break;
+          case POSTMAN_CONTAINER:
+            setPostmanStatus({ ...postmanStatus, isRunning: true });
+            break;
+          case KAFKA_CONTAINER:
+            setKafkaStatus({ ...kafkaStatus, isRunning: true });
+            break;
+          case ASYNC_MINION_CONTAINER:
+            setAsyncMinionStatus({ ...asyncMinionStatus, isRunning: true });
+            break;
 
-        default:
-          break;
+          default:
+            break;
+        }
       }
+    } catch (error: any) {
+      console.error(error.stderr);
+      handleLaunchFailure();
     }
   };
 
@@ -619,17 +629,22 @@ const App = () => {
     if (event) {
       ddClient.desktopUI.toast.success('Deleting Microcks...');
     }
-    const result = await ddClient.docker.cli.exec('rm', [
-      '-v',
-      MONGO_CONTAINER,
-      POSTMAN_CONTAINER,
-      APP_CONTAINER,
-    ]);
-    console.log('result delete', result);
-    if (!result.code) {
-      setAppStatus({ ...appStatus, exists: false, isRunning: false });
-      setPostmanStatus({ ...postmanStatus, exists: false, isRunning: false });
-      setMongoStatus({ ...mongoStatus, exists: false, isRunning: false });
+    try {
+      const result = await ddClient.docker.cli.exec('rm', [
+        '--force',
+        '-v',
+        MONGO_CONTAINER,
+        POSTMAN_CONTAINER,
+        APP_CONTAINER,
+      ]);
+      console.log('result delete', result);
+      if (!result.code) {
+        setAppStatus({ ...appStatus, exists: false, isRunning: false });
+        setPostmanStatus({ ...postmanStatus, exists: false, isRunning: false });
+        setMongoStatus({ ...mongoStatus, exists: false, isRunning: false });
+      }
+    } catch (error: any) {
+      console.error(error.stderr);
     }
     if (config.asyncEnabled) {
       const asyncRes = await ddClient.docker.cli.exec('rm', [
@@ -652,13 +667,13 @@ const App = () => {
   const buildStreamingOpts = (
     container: string,
     status: React.Dispatch<React.SetStateAction<ContainerStatus>>,
-  ): any => {
+  ): ExecStreamOptions => {
     return {
       onOutput(data: any) {
         if (data.stdout) {
-          console.error('[%s] ' + data.stdout, container);
+          console.log('[%s] ' + data.stdout, container);
         } else {
-          console.log('[%s] ' + data.stderr, container);
+          console.error('[%s] ' + data.stderr, container);
         }
       },
       onError(error: any) {
@@ -674,9 +689,30 @@ const App = () => {
             exists: true,
           }));
         }
+        else if (container === APP_CONTAINER) {
+          console.error("Main app crashed!")
+          if (exitCode == 125) {
+            console.error('Failed: port is already allocated.');
+            handleLaunchFailure();
+          }
+        }
       },
       splitOutputLines: true,
     };
+  };
+
+  const handleLaunchFailure = async () => {
+    try {
+      const result = await deleteMicrocks();
+    } catch (error: any) {
+      console.error(error.stderr);
+    }
+    setAlertDialogData((value) => ({
+      ...value,
+      title: 'Failure',
+      text: 'Port is already allocated. Please use a different port by changing the port offset in the settings dialog.',
+    }));
+    setOpenAlertDialog(true);
   };
 
   const checkHealth = async () => {
@@ -734,6 +770,13 @@ const App = () => {
         setIsLoading(false);
       }
     }
+  };
+
+  const handleCloseAlertDialog = () => {
+    setOpenAlertDialog(false);
+    setAlertDialogData({ text: '', title: '' });
+    setIsLoading(false);
+    setIsSettingsDialog(true);
   };
 
   return (
@@ -934,6 +977,7 @@ const App = () => {
         open={openDeleteDialog}
         closeHandler={handleCloseDeleteDialog}
       />
+      <AlertDialog title={alertDialogData.title} text={alertDialogData.text} open={openAlertDialog} closeHandler={handleCloseAlertDialog}/>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={isLoading}
