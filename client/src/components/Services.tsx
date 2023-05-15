@@ -30,7 +30,10 @@ import Paper from '@mui/material/Paper';
 import React, { useEffect, useState } from 'react';
 import { APP_CONTAINER } from '../utils/constants';
 import { useDockerDesktopClient } from '../utils/ddclient';
-import { Button, Collapse, IconButton, Link } from '@mui/material';
+import Button from '@mui/material/Button';
+import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -135,19 +138,19 @@ const Services = (props: { config: ExtensionConfig }) => {
           <TableCell width="20%" align="left">
             <Typography component="span">
               Version: {row.version}
-            </Typography>
+              </Typography>
           </TableCell>
           <TableCell width="20%" align="right">
             <Button variant="text"
-                onClick={() =>
-                  ddClient.host.openExternal(
-                    `http://localhost:${8080 + config.portOffset}/#/services/${row.id}`,
-                  )
-                }>Details</Button>
+              onClick={() =>
+                ddClient.host.openExternal(
+                  `http://localhost:${8080 + config.portOffset}/#/services/${row.id}`,
+                )
+              }>Details</Button>
           </TableCell>
         </TableRow>
         <TableRow>
-          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
             <Collapse in={open} timeout="auto" unmountOnExit>
               <Box margin={1} paddingBottom={2}>
                 <TableContainer>
@@ -213,7 +216,8 @@ const Services = (props: { config: ExtensionConfig }) => {
                                 <Link
                                   onClick={() =>
                                     ddClient.host.openExternal(
-                                      formatMockUrl(row, operation)
+                                      formatMockUrl(row, operation) +
+                                        operation.name.split(' ')[1],
                                     )
                                   }
                                   variant="subtitle1"
