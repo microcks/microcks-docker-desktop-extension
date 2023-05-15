@@ -42,4 +42,4 @@ When iterating, use the following command:
 $ make build-extension && docker extension update microcks/microcks-docker-desktop-extension:latest -f
 ```
 
-or see the option to just develop the frontend locally [here](https://docs.docker.com/desktop/extensions-sdk/tutorials/initialize/#developing-the-frontend).
+or see the option to just develop the frontend locally [here](https://docs.docker.com/desktop/extensions-sdk/dev/test-debug/#hot-reloading-whilst-developing-the-ui).
