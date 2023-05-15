@@ -46,7 +46,7 @@ const Settings: React.FC<Props> = ({
   handleCloseDialog,
   config,
 }) => {
-  const [{ portOffset, asyncEnabled }, setLocalConfig] = useState(config);
+  const [{ portOffset, asyncEnabled, postmanEnabled }, setLocalConfig] = useState(config);
 
   useEffect(() => {
     if (config) {
@@ -89,6 +89,16 @@ const Settings: React.FC<Props> = ({
               }
               label={<Typography variant="subtitle1">Enable Asynchronous APIs</Typography>}
             />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="postmanEnabled"
+                  checked={postmanEnabled}
+                  onChange={handleChange}
+                />
+              }
+              label={<Typography variant="subtitle1">Enable Postman Runtime</Typography>}
+            />
           </FormControl>
           <TextField
             id="portoffset"
@@ -129,6 +139,7 @@ const Settings: React.FC<Props> = ({
           onClick={(event) =>
             handleClose({
               asyncEnabled: asyncEnabled,
+              postmanEnabled: postmanEnabled,
               portOffset: portOffset,
             })
           }

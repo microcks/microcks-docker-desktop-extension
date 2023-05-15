@@ -233,6 +233,7 @@ const App = () => {
     console.log('Launch Microcks!');
     sendMetric('microcks_extension_launched', {
       asyncEnabled: config.asyncEnabled,
+      postmanEnabled: config.postmanEnabled,
       portOffset: config.portOffset,
     });
 
@@ -284,33 +285,6 @@ const App = () => {
             );
           } else {
             startContainer(MONGO_CONTAINER);
-          }
-        }
-
-        console.log('postmanstatus', postmanStatus);
-        if (postmanStatus && !postmanStatus.isRunning) {
-          if (!postmanStatus.exists) {
-            console.log('Creating ', POSTMAN_CONTAINER);
-            const postmanRes = ddClient.docker.cli.exec(
-              'run',
-              [
-                '-d',
-                '--name',
-                POSTMAN_CONTAINER,
-                '--network',
-                EXTENSION_NETWORK,
-                '--hostname',
-                'postman',
-                '--label',
-                'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
-                'quay.io/microcks/microcks-postman-runtime:latest',
-              ],
-              {
-                stream: buildStreamingOpts(POSTMAN_CONTAINER, setPostmanStatus),
-              },
-            );
-          } else {
-            startContainer(POSTMAN_CONTAINER);
           }
         }
 
@@ -376,6 +350,38 @@ const App = () => {
             }
           }
         }
+
+        if (config.postmanEnabled) {
+          console.log(
+            'Postman configuration is enabled, launching postman runtime container...',
+          );
+          console.log('postmanstatus', postmanStatus);
+          if (postmanStatus && !postmanStatus.isRunning) {
+            if (!postmanStatus.exists) {
+              console.log('Creating ', POSTMAN_CONTAINER);
+              const postmanRes = ddClient.docker.cli.exec(
+                'run',
+                [
+                  '-d',
+                  '--name',
+                  POSTMAN_CONTAINER,
+                  '--network',
+                  EXTENSION_NETWORK,
+                  '--hostname',
+                  'postman',
+                  '--label',
+                  'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
+                  'quay.io/microcks/microcks-postman-runtime:latest',
+                ],
+                {
+                  stream: buildStreamingOpts(POSTMAN_CONTAINER, setPostmanStatus),
+                },
+              );
+            } else {
+              startContainer(POSTMAN_CONTAINER);
+            }
+          }
+        } 
 
         if (config.asyncEnabled) {
           console.log(
@@ -575,6 +581,7 @@ const App = () => {
     console.log('Stopping Microcks...');
     sendMetric('microcks_extension_stopped', {
       asyncEnabled: config.asyncEnabled,
+      postmanEnabled: config.postmanEnabled,
       portOffset: config.portOffset,
     });
 
@@ -584,14 +591,20 @@ const App = () => {
     }
     const result = await ddClient.docker.cli.exec('stop', [
       MONGO_CONTAINER,
-      POSTMAN_CONTAINER,
       APP_CONTAINER,
     ]);
     console.log('stop res: ', result);
     if (event && !result.code) {
       setAppStatus({ ...appStatus, isRunning: false });
-      setPostmanStatus({ ...postmanStatus, isRunning: false });
       setMongoStatus({ ...mongoStatus, isRunning: false });
+    }
+    if (config.postmanEnabled) {
+      const postmanRes = await ddClient.docker.cli.exec('stop', [
+        POSTMAN_CONTAINER
+      ]);
+      if (event && !postmanRes.code) {
+        setPostmanStatus({ ...postmanStatus, isRunning: false });
+      }
     }
     if (config.asyncEnabled) {
       const asyncRes = await ddClient.docker.cli.exec('stop', [
@@ -634,17 +647,25 @@ const App = () => {
         '--force',
         '-v',
         MONGO_CONTAINER,
-        POSTMAN_CONTAINER,
         APP_CONTAINER,
       ]);
       console.log('result delete', result);
       if (!result.code) {
         setAppStatus({ ...appStatus, exists: false, isRunning: false });
-        setPostmanStatus({ ...postmanStatus, exists: false, isRunning: false });
         setMongoStatus({ ...mongoStatus, exists: false, isRunning: false });
       }
     } catch (error: any) {
       console.error(error.stderr);
+    }
+    if (config.postmanEnabled) {
+      const postmanRes = await ddClient.docker.cli.exec('rm', [
+        '--force',
+        '-v',
+        POSTMAN_CONTAINER,
+      ]);
+      if (!postmanRes.code) {
+        setPostmanStatus({ ...postmanStatus, exists: false, isRunning: false });
+      }
     }
     if (config.asyncEnabled) {
       const asyncRes = await ddClient.docker.cli.exec('rm', [
