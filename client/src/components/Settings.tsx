@@ -97,7 +97,7 @@ const Settings: React.FC<Props> = ({
                   onChange={handleChange}
                 />
               }
-              label={<Typography variant="subtitle1">Enable Postman Runtime</Typography>}
+              label={<Typography variant="subtitle1">Enable testing with Postman</Typography>}
             />
           </FormControl>
           <TextField
