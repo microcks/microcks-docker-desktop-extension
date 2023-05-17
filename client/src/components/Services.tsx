@@ -36,7 +36,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { ExtensionConfig } from '../types/ExtensionConfig';
-import ServiceType from './lib/ServiceType';
+import ServiceType from './ServiceType';
 
 type Service = {
   id: string;
