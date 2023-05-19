@@ -30,12 +30,13 @@ import Paper from '@mui/material/Paper';
 import React, { useEffect, useState } from 'react';
 import { APP_CONTAINER } from '../utils/constants';
 import { useDockerDesktopClient } from '../utils/ddclient';
-import { Collapse, IconButton, Link } from '@mui/material';
+import { Button, Collapse, IconButton, Link } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { ExtensionConfig } from '../types/ExtensionConfig';
+import ServiceType from './ServiceType';
 
 type Service = {
   id: string;
@@ -76,6 +77,32 @@ const Services = (props: { config: ExtensionConfig }) => {
     setServices(svcs);
   };
 
+  const encodeUrl = (url: string): string => {
+    return url.replace(/\s/g, '+');
+  }
+
+  const formatMockUrl = (service: Service, operation: Operation): string => {
+    var result = `http://localhost:${8080 + config.portOffset}`;
+
+    if (service.type === "REST") {
+      result += '/rest/';
+      result += encodeUrl(service.name) + '/' + service.version;
+    } else if (service.type === "SOAP_HTTP") {
+      result += '/soap/';
+      result += encodeUrl(service.name) + '/' + service.version;
+    } else if (service.type === "GRAPHQL") {
+      result += '/graphql/';
+      result += encodeUrl(service.name) + '/' + service.version;
+    } else if (service.type === "GENERIC_REST") {
+      result += '/dynarest/';
+      result += encodeUrl(service.name) + '/' + service.version;
+    } else if (service.type === "GRPC") {
+      result = `http://localhost:${9090 + config.portOffset}`;
+    }
+
+    return result;
+  }
+
   useEffect(() => {
     getServices();
   }, []);
@@ -102,24 +129,21 @@ const Services = (props: { config: ExtensionConfig }) => {
               {row.name}
             </Typography>
           </TableCell>
-          <TableCell width="20%" align="right">
-            <Typography variant="subtitle1" component="span">
+          <TableCell width="20%" align="left">
+            <ServiceType type={ row.type }></ServiceType>
+          </TableCell>
+          <TableCell width="20%" align="left">
+            <Typography component="span">
               Version: {row.version}
             </Typography>
           </TableCell>
           <TableCell width="20%" align="right">
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              sx={{
-                color: '#9c27b0',
-              }}
-              component="span"
-            >
-              {row.type.startsWith('GENERIC_')
-                ? `${row.type.split('_')[1]}`
-                : row.type}
-            </Typography>
+            <Button variant="text"
+                onClick={() =>
+                  ddClient.host.openExternal(
+                    `http://localhost:${8080 + config.portOffset}/#/services/${row.id}`,
+                  )
+                }>Details</Button>
           </TableCell>
         </TableRow>
         <TableRow>
@@ -130,9 +154,9 @@ const Services = (props: { config: ExtensionConfig }) => {
                   <Table size="small" aria-label="operations">
                     <TableHead>
                       <TableRow>
-                        <TableCell>Method</TableCell>
-                        <TableCell>Path</TableCell>
-                        <TableCell>Mock URL</TableCell>
+                        <TableCell width="15%">Method</TableCell>
+                        <TableCell width="30%">Path</TableCell>
+                        <TableCell width="100%">Mock URL</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -147,16 +171,18 @@ const Services = (props: { config: ExtensionConfig }) => {
                                 sx={{
                                   borderRadius: '0',
                                   color:
-                                    operation.method == 'GET'
-                                      ? 'green'
-                                      : operation.method == 'POST'
+                                    operation.method === 'GET'
+                                      ? '#3f9c35'
+                                      : operation.method === 'POST'
                                       ? '#ec7a08'
-                                      : operation.method == 'DELETE'
+                                      : operation.method === 'PUT'
+                                      ? '#39a5dc'
+                                      : operation.method === 'DELETE'
                                       ? '#c00'
-                                      : '#39a5dc',
+                                      : '#00659c',
                                 }}
                               >
-                                {operation.method}
+                                {operation.method ? operation.method : 'POST'}
                               </Typography>
                             </TableCell>
                             <TableCell>
@@ -187,24 +213,14 @@ const Services = (props: { config: ExtensionConfig }) => {
                                 <Link
                                   onClick={() =>
                                     ddClient.host.openExternal(
-                                      `http://localhost:${
-                                        8080 + config.portOffset
-                                      }/dynarest/${row.name.replace(
-                                        ' ',
-                                        '+',
-                                      )}/${row.version}${
-                                        operation.name.split(' ')[1]
-                                      }`,
+                                      formatMockUrl(row, operation)
                                     )
                                   }
                                   variant="subtitle1"
                                   component="span"
                                 >
-                                  http://localhost:
-                                  {8080 + config.portOffset}
-                                  /dynarest/
-                                  {row.name.replace(' ', '+')}/{row.version}
-                                  {operation.name.split(' ')[1]}{' '}
+                                  { formatMockUrl(row, operation) }
+                                  {operation.name.split(' ')[1]} {' '}
                                   <OpenInNewIcon
                                     fontSize="small"
                                     style={{ verticalAlign: 'middle' }}
