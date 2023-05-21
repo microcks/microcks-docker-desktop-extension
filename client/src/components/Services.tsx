@@ -223,8 +223,8 @@ const Services = (props: { config: ExtensionConfig }) => {
                                 </Box>
                               ) : operation.resourcePaths ? (
                                 <List>
-                                  {operation.resourcePaths.map((path) => (
-                                    <ListItem disablePadding>
+                                  {operation.resourcePaths.map((path, index) => (
+                                    <ListItem key={index} disablePadding>
                                       <Link
                                         onClick={() =>
                                           ddClient.host.openExternal(
