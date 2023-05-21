@@ -30,12 +30,21 @@ import Paper from '@mui/material/Paper';
 import React, { useEffect, useState } from 'react';
 import { APP_CONTAINER } from '../utils/constants';
 import { useDockerDesktopClient } from '../utils/ddclient';
-import { Collapse, IconButton, Link } from '@mui/material';
+import Button from '@mui/material/Button';
+import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+
 import { ExtensionConfig } from '../types/ExtensionConfig';
+import ServiceType from './lib/ServiceType';
+import ClipboardCopy from './ClipboardCopy';
 
 type Service = {
   id: string;
@@ -50,6 +59,7 @@ type Operation = {
   method: string;
   dispatcher: string;
   dispatcherRules: string;
+  resourcePaths: string[];
 };
 
 const Services = (props: { config: ExtensionConfig }) => {
@@ -75,6 +85,33 @@ const Services = (props: { config: ExtensionConfig }) => {
     console.log(svcs);
     setServices(svcs);
   };
+
+  const encodeUrl = (url: string): string => {
+    return url.replace(/\s/g, '+');
+  }
+
+  const formatMockUrl = (service: Service, operation: Operation, path?: string): string => {
+    var result = `http://localhost:${8080 + config.portOffset}`;
+
+    if (service.type === "REST") {
+      result += '/rest/';
+      result += encodeUrl(service.name) + '/' + service.version;
+      result += path;
+    } else if (service.type === "SOAP_HTTP") {
+      result += '/soap/';
+      result += encodeUrl(service.name) + '/' + service.version;
+    } else if (service.type === "GRAPHQL") {
+      result += '/graphql/';
+      result += encodeUrl(service.name) + '/' + service.version;
+    } else if (service.type === "GENERIC_REST") {
+      result += '/dynarest/';
+      result += encodeUrl(service.name) + '/' + service.version;
+    } else if (service.type === "GRPC") {
+      result = `http://localhost:${9090 + config.portOffset}`;
+    }
+
+    return result;
+  }
 
   useEffect(() => {
     getServices();
@@ -102,24 +139,25 @@ const Services = (props: { config: ExtensionConfig }) => {
               {row.name}
             </Typography>
           </TableCell>
-          <TableCell width="20%" align="right">
-            <Typography variant="subtitle1" component="span">
-              Version: {row.version}
-            </Typography>
+          <TableCell width="20%" align="left">
+            <ServiceType type={row.type}></ServiceType>
+          </TableCell>
+          <TableCell width="20%" align="left">
+            <Typography component="span">Version: {row.version}</Typography>
           </TableCell>
           <TableCell width="20%" align="right">
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              sx={{
-                color: '#9c27b0',
-              }}
-              component="span"
+            <Button
+              variant="text"
+              onClick={() =>
+                ddClient.host.openExternal(
+                  `http://localhost:${8080 + config.portOffset}/#/services/${
+                    row.id
+                  }`,
+                )
+              }
             >
-              {row.type.startsWith('GENERIC_')
-                ? `${row.type.split('_')[1]}`
-                : row.type}
-            </Typography>
+              Details
+            </Button>
           </TableCell>
         </TableRow>
         <TableRow>
@@ -183,33 +221,51 @@ const Services = (props: { config: ExtensionConfig }) => {
                                     Async APIs are disabled
                                   </Typography>
                                 </Box>
+                              ) : operation.resourcePaths ? (
+                                <List>
+                                  {operation.resourcePaths.map((path) => (
+                                    <ListItem disablePadding>
+                                      <Link
+                                        onClick={() =>
+                                          ddClient.host.openExternal(
+                                            formatMockUrl(row, operation, path),
+                                          )
+                                        }
+                                        variant="subtitle1"
+                                        component="span"
+                                      >
+                                        {formatMockUrl(row, operation, path)}
+                                      </Link>
+                                      <ClipboardCopy
+                                        copyText={formatMockUrl(
+                                          row,
+                                          operation,
+                                          path,
+                                        )}
+                                      />
+                                    </ListItem>
+                                  ))}
+                                </List>
                               ) : (
-                                <Link
-                                  onClick={() =>
-                                    ddClient.host.openExternal(
-                                      `http://localhost:${
-                                        8080 + config.portOffset
-                                      }/dynarest/${row.name.replace(
-                                        ' ',
-                                        '+',
-                                      )}/${row.version}${
-                                        operation.name.split(' ')[1]
-                                      }`,
-                                    )
-                                  }
-                                  variant="subtitle1"
-                                  component="span"
-                                >
-                                  http://localhost:
-                                  {8080 + config.portOffset}
-                                  /dynarest/
-                                  {row.name.replace(' ', '+')}/{row.version}
-                                  {operation.name.split(' ')[1]}{' '}
-                                  <OpenInNewIcon
-                                    fontSize="small"
-                                    style={{ verticalAlign: 'middle' }}
+                                <>
+                                  <Link
+                                    onClick={() =>
+                                      ddClient.host.openExternal(
+                                        formatMockUrl(row, operation),
+                                      )
+                                    }
+                                    variant="subtitle1"
+                                    component="span"
+                                  >
+                                    {formatMockUrl(row, operation)}
+                                  </Link>
+                                  <ClipboardCopy
+                                    copyText={formatMockUrl(
+                                      row,
+                                      operation
+                                    )}
                                   />
-                                </Link>
+                                </>
                               )}
                             </TableCell>
                           </TableRow>
