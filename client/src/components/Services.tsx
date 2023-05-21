@@ -16,34 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import TableContainer from '@mui/material/TableContainer';
-import Chip from '@mui/material/Chip';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableBody from '@mui/material/TableBody';
-import Paper from '@mui/material/Paper';
-import React, { useEffect, useState } from 'react';
-import { APP_CONTAINER } from '../utils/constants';
-import { useDockerDesktopClient } from '../utils/ddclient';
 import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Typography from '@mui/material/Typography';
+import React, { useEffect, useState } from 'react';
+import { APP_CONTAINER } from '../utils/constants';
+import { useDockerDesktopClient } from '../utils/ddclient';
 
 import { ExtensionConfig } from '../types/ExtensionConfig';
 import ClipboardCopy from './ClipboardCopy';
+import ServiceType from './ServiceType';
 
 type Service = {
   id: string;
@@ -164,7 +161,7 @@ const Services = (props: { config: ExtensionConfig }) => {
           </TableCell>
         </TableRow>
         <TableRow>
-          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
             <Collapse in={open} timeout="auto" unmountOnExit>
               <Box margin={1} paddingBottom={2}>
                 <TableContainer>
