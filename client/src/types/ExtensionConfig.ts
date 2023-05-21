@@ -18,5 +18,6 @@
  */
 export class ExtensionConfig {
   asyncEnabled: boolean = false;
+  postmanEnabled: boolean = false;
   portOffset: number = 0;
 }

@@ -43,7 +43,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 import { ExtensionConfig } from '../types/ExtensionConfig';
-import ServiceType from './lib/ServiceType';
 import ClipboardCopy from './ClipboardCopy';
 
 type Service = {
@@ -88,30 +87,34 @@ const Services = (props: { config: ExtensionConfig }) => {
 
   const encodeUrl = (url: string): string => {
     return url.replace(/\s/g, '+');
-  }
+  };
 
-  const formatMockUrl = (service: Service, operation: Operation, path?: string): string => {
+  const formatMockUrl = (
+    service: Service,
+    operation: Operation,
+    path?: string,
+  ): string => {
     var result = `http://localhost:${8080 + config.portOffset}`;
 
-    if (service.type === "REST") {
+    if (service.type === 'REST') {
       result += '/rest/';
       result += encodeUrl(service.name) + '/' + service.version;
       result += path;
-    } else if (service.type === "SOAP_HTTP") {
+    } else if (service.type === 'SOAP_HTTP') {
       result += '/soap/';
       result += encodeUrl(service.name) + '/' + service.version;
-    } else if (service.type === "GRAPHQL") {
+    } else if (service.type === 'GRAPHQL') {
       result += '/graphql/';
       result += encodeUrl(service.name) + '/' + service.version;
-    } else if (service.type === "GENERIC_REST") {
+    } else if (service.type === 'GENERIC_REST') {
       result += '/dynarest/';
       result += encodeUrl(service.name) + '/' + service.version;
-    } else if (service.type === "GRPC") {
+    } else if (service.type === 'GRPC') {
       result = `http://localhost:${9090 + config.portOffset}`;
     }
 
     return result;
-  }
+  };
 
   useEffect(() => {
     getServices();
@@ -260,10 +263,7 @@ const Services = (props: { config: ExtensionConfig }) => {
                                     {formatMockUrl(row, operation)}
                                   </Link>
                                   <ClipboardCopy
-                                    copyText={formatMockUrl(
-                                      row,
-                                      operation
-                                    )}
+                                    copyText={formatMockUrl(row, operation)}
                                   />
                                 </>
                               )}
