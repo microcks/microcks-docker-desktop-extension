@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 
-const ClipboardCopy: React.FC<{copyText:string}> = ({ copyText }) => {
+const ClipboardCopy: React.FC<{ copyText: string, size?: 'small'| 'medium' | 'large' }> = ({ copyText, size }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const copyTextToClipboard = async (text: string) => {
@@ -30,13 +30,12 @@ const ClipboardCopy: React.FC<{copyText:string}> = ({ copyText }) => {
   };
 
   return (
-    <Tooltip title={isCopied ? 'Copied!': 'Copy'}>
-
-    <IconButton onClick={handleCopyClick}>
-      <ContentCopyIcon/>
-    </IconButton>
+    <Tooltip title={isCopied ? 'Copied!' : 'Copy'}>
+      <IconButton onClick={handleCopyClick} component="span" size={size}>
+        <ContentCopyIcon fontSize={size}/>
+      </IconButton>
     </Tooltip>
   );
 };
 
-export default ClipboardCopy
+export default ClipboardCopy;
