@@ -67,6 +67,7 @@ import Services from './components/Services';
 import { useDockerDesktopClient } from './utils/ddclient';
 import { ExecStreamOptions } from '@docker/extension-api-client-types/dist/v1';
 import AlertDialog from './components/AlertDialog';
+import ClipboardCopy from './components/ClipboardCopy';
 
 const isWindows = () => {
   const platform = useDockerDesktopClient().host.platform;
@@ -970,11 +971,24 @@ const App = () => {
                   component="span"
                 >
                   http://localhost:{8080 + config.portOffset}
+                </Link>
+                <IconButton
+                  onClick={() =>
+                    ddClient.host.openExternal(
+                      `http://localhost:${8080 + config.portOffset}/#/`,
+                    )
+                  }
+                  component="span"
+                  size="small"
+                >
                   <OpenInNewIcon
                     fontSize="small"
-                    style={{ verticalAlign: 'middle' }}
                   />
-                </Link>
+                </IconButton>
+                <ClipboardCopy
+                  copyText={`http://localhost:${8080 + config.portOffset}/#/`}
+                  size="small"
+                />
               </Typography>
             </Box>
           </Paper>
@@ -998,7 +1012,12 @@ const App = () => {
         open={openDeleteDialog}
         closeHandler={handleCloseDeleteDialog}
       />
-      <AlertDialog title={alertDialogData.title} text={alertDialogData.text} open={openAlertDialog} closeHandler={handleCloseAlertDialog}/>
+      <AlertDialog
+        title={alertDialogData.title}
+        text={alertDialogData.text}
+        open={openAlertDialog}
+        closeHandler={handleCloseAlertDialog}
+      />
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={isLoading}

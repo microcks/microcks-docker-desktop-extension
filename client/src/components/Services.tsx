@@ -23,7 +23,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
-import Link from '@mui/material/Link';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import Stack from '@mui/material/Stack';
@@ -39,7 +38,7 @@ import { APP_CONTAINER } from '../utils/constants';
 import { useDockerDesktopClient } from '../utils/ddclient';
 
 import { ExtensionConfig } from '../types/ExtensionConfig';
-import ClipboardCopy from './ClipboardCopy';
+import MockURLRow from './MockURLRow';
 import ServiceType from './ServiceType';
 
 type Service = {
@@ -199,7 +198,7 @@ const Services = (props: { config: ExtensionConfig }) => {
                             </TableCell>
                             <TableCell>
                               <Typography variant="body1" component="span">
-                                {operation.name}
+                                {operation.name.replace(operation.method, '')}
                               </Typography>
                             </TableCell>
                             <TableCell>
@@ -223,44 +222,27 @@ const Services = (props: { config: ExtensionConfig }) => {
                                 </Box>
                               ) : operation.resourcePaths ? (
                                 <List>
-                                  {operation.resourcePaths.map((path, index) => (
-                                    <ListItem key={index} disablePadding>
-                                      <Link
-                                        onClick={() =>
-                                          ddClient.host.openExternal(
-                                            formatMockUrl(row, operation, path),
-                                          )
-                                        }
-                                        variant="subtitle1"
-                                        component="span"
-                                      >
-                                        {formatMockUrl(row, operation, path)}
-                                      </Link>
-                                      <ClipboardCopy
-                                        copyText={formatMockUrl(
-                                          row,
-                                          operation,
-                                          path,
-                                        )}
-                                      />
-                                    </ListItem>
-                                  ))}
+                                  {operation.resourcePaths.map(
+                                    (path, index) => (
+                                      <ListItem key={index} disablePadding>
+                                        <MockURLRow
+                                          mockURL={formatMockUrl(
+                                            row,
+                                            operation,
+                                            path,
+                                          )}
+                                        />
+                                      </ListItem>
+                                    ),
+                                  )}
                                 </List>
                               ) : (
                                 <>
-                                  <Link
-                                    onClick={() =>
-                                      ddClient.host.openExternal(
-                                        formatMockUrl(row, operation),
-                                      )
-                                    }
-                                    variant="subtitle1"
-                                    component="span"
-                                  >
-                                    {formatMockUrl(row, operation)}
-                                  </Link>
-                                  <ClipboardCopy
-                                    copyText={formatMockUrl(row, operation)}
+                                  <MockURLRow
+                                    mockURL={formatMockUrl(
+                                      row,
+                                      operation,
+                                    )}
                                   />
                                 </>
                               )}

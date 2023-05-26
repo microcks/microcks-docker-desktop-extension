@@ -16,8 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React, { FC } from 'react';
 import Chip from '@mui/material/Chip';
+import { FC } from 'react';
 
 interface ServiceTypeProps {
   type: string;
