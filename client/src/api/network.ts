@@ -29,7 +29,7 @@ export async function ensureNetworkExists(): Promise<boolean> {
   try {
     networkResult = await ddClient.docker.cli.exec("network", ["inspect", EXTENSION_NETWORK]);
   } catch (e: any) {
-    if (e.stderr !== undefined && (e.stderr.includes('No such network'))) {
+    if (e.stderr?.includes('No such network') || e.stderr?.includes('not found')) {
       // Create missing network for our extension.
       console.info('Creating a bridge network for extension.');
       try {
