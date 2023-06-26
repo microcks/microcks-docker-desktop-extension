@@ -16,7 +16,7 @@ Since Docker Desktop v4.10 the extension CLI is included with the standard insta
 To install the extension:
 
 ```bash
-$ docker extension install microcks/microcks-docker-extension:latest
+$ docker extension install microcks/microcks-docker-desktop-extension:latest
 ```
 
 ## Build it locally
