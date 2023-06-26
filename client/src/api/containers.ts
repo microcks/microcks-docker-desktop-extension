@@ -52,7 +52,7 @@ export async function getContainerInfo(
       info.exists = false;
     }
   } catch (e: any) {
-    if (e.stderr !== undefined && e.stderr.includes('No such object')) {
+    if (e.stderr !== undefined && e.stderr.toLowerCase().includes('no such object')) {
       console.info(
         container +
           ' info - exists: ' +
