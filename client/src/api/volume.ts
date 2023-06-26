@@ -29,7 +29,7 @@ export async function ensureVolumeExists(): Promise<boolean> {
   try {
     volumeResult = await ddClient.docker.cli.exec("volume", ["inspect", EXTENSION_VOLUME]);
   } catch (e: any) {
-    if (e.stderr !== undefined && (e.stderr.includes('No such volume'))) {
+    if (e.stderr !== undefined && (e.stderr.toLowerCase().includes('no such volume'))) {
       // Create missing volume for our extension.
       console.info('Creating a volume for extension data.');
       try {
