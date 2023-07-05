@@ -314,7 +314,7 @@ const App = () => {
             '-e',
             'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
             '-e',
-            'SPRING_DATA_MONGODB_URI=mongodb://mongo:27017',
+            'SPRING_DATA_MONGODB_URI=mongodb://microcks-mongodb:27017',
             '-e',
             'SPRING_DATA_MONGODB_DATABASE=microcks',
             '-e',
