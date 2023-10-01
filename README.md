@@ -43,3 +43,24 @@ $ make build-extension && docker extension update microcks/microcks-docker-deskt
 ```
 
 or see the option to just develop the frontend locally [here](https://docs.docker.com/desktop/extensions-sdk/dev/test-debug/#hot-reloading-whilst-developing-the-ui).
+
+## Debug
+
+Open Chrome DevTools:
+
+```sh
+docker extension dev debug microcks/microcks-docker-desktop-extension:latest
+```
+
+Developing the UI
+
+```sh
+docker extension dev ui-source microcks/microcks-docker-desktop-extension:latest http://localhost:3000
+```
+
+Reset
+
+```sh
+docker extension dev reset microcks/microcks-docker-desktop-extension:latest
+```
+
