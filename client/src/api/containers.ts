@@ -44,9 +44,11 @@ export async function getContainerInfo(
         info.isRunning = true;
       }
       console.log('bindings', containerObj.HostConfig?.PortBindings);
-      if (Object.keys(containerObj.HostConfig?.PortBindings).length > 0) {
+      const keys = Object.keys(containerObj.HostConfig?.PortBindings).sort((a, b) => Number(a.substring(0, a.length - 4)) - Number(b.substring(0, b.length - 4)));
+      console.log('keys: ', keys)
+      if (keys.length) {
         info.mappedPort =
-          containerObj.HostConfig?.PortBindings?.['8080/tcp'][0]?.HostPort;
+          containerObj.HostConfig?.PortBindings?.[keys[0]][0]?.HostPort;
       }
     } else {
       info.exists = false;
