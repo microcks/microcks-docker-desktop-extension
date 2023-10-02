@@ -39,23 +39,9 @@ import { useDockerDesktopClient } from '../utils/ddclient';
 
 import { ExtensionConfig } from '../types/ExtensionConfig';
 import MockURLRow from './MockURLRow';
-import ServiceType from './ServiceType';
-
-type Service = {
-  id: string;
-  name: string;
-  version: string;
-  type: string;
-  operations: Operation[];
-};
-
-type Operation = {
-  name: string;
-  method: string;
-  dispatcher: string;
-  dispatcherRules: string;
-  resourcePaths: string[];
-};
+import ServiceTypeLabel from './ServiceTypeLabel';
+import { Operation, Service } from '../types/Service';
+import ServiceRow from './ServiceRow';
 
 const Services = (props: { config: ExtensionConfig }) => {
   const [services, setServices] = useState<Service[]>([]);
@@ -81,184 +67,9 @@ const Services = (props: { config: ExtensionConfig }) => {
     setServices(svcs);
   };
 
-  const encodeUrl = (url: string): string => {
-    return url.replace(/\s/g, '+');
-  };
-
-  const formatMockUrl = (
-    service: Service,
-    operation: Operation,
-    path?: string,
-  ): string => {
-    var result = `http://localhost:${8080 + config.portOffset}`;
-
-    if (service.type === 'REST') {
-      result += '/rest/';
-      result += encodeUrl(service.name) + '/' + service.version;
-      result += path;
-    } else if (service.type === 'SOAP_HTTP') {
-      result += '/soap/';
-      result += encodeUrl(service.name) + '/' + service.version;
-    } else if (service.type === 'GRAPHQL') {
-      result += '/graphql/';
-      result += encodeUrl(service.name) + '/' + service.version;
-    } else if (service.type === 'GENERIC_REST') {
-      result += '/dynarest/';
-      result += encodeUrl(service.name) + '/' + service.version;
-    } else if (service.type === 'GRPC') {
-      result = `http://localhost:${9090 + config.portOffset}`;
-    }
-
-    return result;
-  };
-
   useEffect(() => {
     getServices();
   }, []);
-
-  const Row = (props: { row: Service }) => {
-    const [open, setOpen] = React.useState(false);
-
-    const { row } = props;
-
-    return (
-      <React.Fragment>
-        <TableRow sx={{ '& > *': { borderBottom: 'none' } }}>
-          <TableCell width="5%">
-            <IconButton
-              aria-label="expand row"
-              size="small"
-              onClick={() => setOpen(!open)}
-            >
-              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-            </IconButton>
-          </TableCell>
-          <TableCell component="th" scope="row">
-            <Typography variant="subtitle1" component="span">
-              {row.name}
-            </Typography>
-          </TableCell>
-          <TableCell width="20%" align="left">
-            <ServiceType type={row.type}></ServiceType>
-          </TableCell>
-          <TableCell width="20%" align="left">
-            <Typography component="span">Version: {row.version}</Typography>
-          </TableCell>
-          <TableCell width="20%" align="right">
-            <Button
-              variant="text"
-              onClick={() =>
-                ddClient.host.openExternal(
-                  `http://localhost:${8080 + config.portOffset}/#/services/${
-                    row.id
-                  }`,
-                )
-              }
-            >
-              Details
-            </Button>
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
-            <Collapse in={open} timeout="auto" unmountOnExit>
-              <Box margin={1} paddingBottom={2}>
-                <TableContainer>
-                  <Table size="small" aria-label="operations">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Method</TableCell>
-                        <TableCell>Path</TableCell>
-                        <TableCell>Mock URL</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {row.operations
-                        .sort((a, b) => a.name.length - b.name.length)
-                        .map((operation) => (
-                          <TableRow key={operation.name}>
-                            <TableCell component="th" scope="row">
-                              <Typography
-                                fontWeight="bold"
-                                variant="h6"
-                                sx={{
-                                  borderRadius: '0',
-                                  color:
-                                    operation.method == 'GET'
-                                      ? 'green'
-                                      : operation.method == 'POST'
-                                      ? '#ec7a08'
-                                      : operation.method == 'DELETE'
-                                      ? '#c00'
-                                      : '#39a5dc',
-                                }}
-                              >
-                                {operation.method}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body1" component="span">
-                                {operation.name.replace(operation.method, '')}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              {row.type.includes('EVENT') &&
-                              !config.asyncEnabled ? (
-                                <Box
-                                  sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap',
-                                  }}
-                                >
-                                  <WarningAmberIcon />
-                                  <Typography
-                                    variant="body1"
-                                    component="span"
-                                    marginLeft={1}
-                                  >
-                                    Async APIs are disabled
-                                  </Typography>
-                                </Box>
-                              ) : operation.resourcePaths ? (
-                                <List>
-                                  {operation.resourcePaths.map(
-                                    (path, index) => (
-                                      <ListItem key={index} disablePadding>
-                                        <MockURLRow
-                                          mockURL={formatMockUrl(
-                                            row,
-                                            operation,
-                                            path,
-                                          )}
-                                        />
-                                      </ListItem>
-                                    ),
-                                  )}
-                                </List>
-                              ) : (
-                                <>
-                                  <MockURLRow
-                                    mockURL={formatMockUrl(
-                                      row,
-                                      operation,
-                                    )}
-                                  />
-                                </>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      </React.Fragment>
-    );
-  };
 
   return (
     <Box sx={{ width: '100%', alignItems: 'center' }} my={5}>
@@ -269,7 +80,7 @@ const Services = (props: { config: ExtensionConfig }) => {
             <Table aria-label="collapsible table">
               <TableBody>
                 {services.map((service) => (
-                  <Row key={service.id} row={service} />
+                  <ServiceRow key={service.id} row={service} config={config} />
                 ))}
               </TableBody>
             </Table>

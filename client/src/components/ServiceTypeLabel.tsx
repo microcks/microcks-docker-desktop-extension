@@ -23,7 +23,7 @@ interface ServiceTypeProps {
   type: string;
 }
 
-const ServiceType: FC<ServiceTypeProps> = ({ type }) => {
+const ServiceTypeLabel: FC<ServiceTypeProps> = ({ type }) => {
 
   var label = type;
   var backgroundColor = '#3f9c35';
@@ -58,4 +58,4 @@ const ServiceType: FC<ServiceTypeProps> = ({ type }) => {
   );
 };
 
-export default ServiceType
+export default ServiceTypeLabel

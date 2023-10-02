@@ -5,15 +5,43 @@ import Typography from '@mui/material/Typography';
 import React from 'react';
 import { useDockerDesktopClient } from '../utils/ddclient';
 import ClipboardCopy from './ClipboardCopy';
+import { Box } from '@mui/material';
 
 interface MockURLRowProps {
+  bindings?: any;
   mockURL: string;
+  destination?: string;
 }
 
-const MockURLRow: React.FC<MockURLRowProps> = ({ mockURL }) => {
+const MockURLRow: React.FC<MockURLRowProps> = ({
+  bindings,
+  mockURL,
+  destination,
+}) => {
   const ddClient = useDockerDesktopClient();
 
-  return (
+  return bindings ? (
+    <Box marginLeft={1} display="flex" flexDirection="column">
+      {Object.keys(bindings).map((binding: any) => (
+        <>
+          <Typography variant="body1">
+            {bindings[binding].type} endpoint:{' '}
+            <Link variant="subtitle1" underline="hover">
+              {mockURL}
+            </Link>
+            <ClipboardCopy copyText={mockURL} />
+          </Typography>
+          <Typography variant="body1">
+            {bindings[binding].type} destination:{' '}
+            <Link variant="subtitle1" underline="hover">
+            {destination}
+            </Link>
+            <ClipboardCopy copyText={destination || ''} />
+          </Typography>
+        </>
+      ))}
+    </Box>
+  ) : (
     <Typography noWrap>
       <Link
         onClick={() => ddClient.host.openExternal(mockURL)}
@@ -23,11 +51,9 @@ const MockURLRow: React.FC<MockURLRowProps> = ({ mockURL }) => {
         {mockURL}
       </Link>
       <IconButton
-        onClick={() =>
-          ddClient.host.openExternal(mockURL)
-        }
+        onClick={() => ddClient.host.openExternal(mockURL)}
         component="span"
-        size='small'
+        size="small"
       >
         <LaunchIcon />
       </IconButton>
