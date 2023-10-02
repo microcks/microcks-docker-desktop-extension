@@ -17,7 +17,7 @@
  * under the License.
  */
 
-export const EXTENSION_NETWORK: string = 'microcks-extension-network';
+export const EXTENSION_NETWORK: string = 'microcks_microcks-docker-desktop-extension-desktop-extension_default';
 export const EXTENSION_VOLUME: string = 'microcks-extension-volume';
 export const APP_CONTAINER: string = 'microcks';
 export const POSTMAN_CONTAINER: string = 'microcks-postman';
