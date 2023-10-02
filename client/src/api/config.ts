@@ -18,6 +18,7 @@
  */
 import { ExtensionConfig } from '../types/ExtensionConfig';
 import { APPLICATION_PROPERTIES, FEATURES_PROPERTIES } from '../utils/config';
+import { APP_CONTAINER, KAFKA_CONTAINER } from '../utils/constants';
 import { execOnHost, isWindows, throwErrorAsString } from './utils';
 
 export async function initializeFileSystem(): Promise<boolean> {
@@ -92,20 +93,23 @@ export async function writeExtensionConfig(config: ExtensionConfig) {
 export async function writePropertiesFiles(config: ExtensionConfig) {
   // Prepare customized properties content depending on ExtensionConfig.
   // For now: just use the default.
-  let applicationProperties = APPLICATION_PROPERTIES;
-  let featuresProperties = FEATURES_PROPERTIES;
+  const applicationProperties = APPLICATION_PROPERTIES;
+  const featuresProperties = FEATURES_PROPERTIES;
 
   console.log("Writing properties file with offset: " + config.portOffset);
-  let customizedFeaturesProperties = featuresProperties
+  const customizedFeaturesProperties = featuresProperties
       .replaceAll('localhost:9092', 'localhost:' + (9092 + config.portOffset))
       .replaceAll('localhost:8081', 'localhost:' + (8081 + config.portOffset))
-
+  const customizedApplicationProperties = applicationProperties
+      .replaceAll('microcks:8080', APP_CONTAINER + ':8080')
+      .replaceAll('kafka:19092', KAFKA_CONTAINER + ':19092')
+  
   let cmdResult;
   try {
     cmdResult = await execOnHost(
       'writeproperties.sh',
       'writeproperties.bat',
-      ['"' + applicationProperties + '"', '"' + customizedFeaturesProperties + '"']
+      ['"' + customizedApplicationProperties + '"', '"' + customizedFeaturesProperties + '"']
     );
   } catch (e: any) {
     throwErrorAsString(e);

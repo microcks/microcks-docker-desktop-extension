@@ -274,7 +274,7 @@ const App = () => {
                 '--network',
                 EXTENSION_NETWORK,
                 '--hostname',
-                'mongo',
+                MONGO_CONTAINER,
                 '-v',
                 //volumeDir + '/data:/data/db',
                 EXTENSION_VOLUME + ':/data/db',
@@ -298,7 +298,7 @@ const App = () => {
             '--network',
             EXTENSION_NETWORK,
             '--hostname',
-            'app',
+            APP_CONTAINER,
             '-v',
             volumeDir + '/config:/deployments/config',
             '-e',
@@ -369,7 +369,7 @@ const App = () => {
                   '--network',
                   EXTENSION_NETWORK,
                   '--hostname',
-                  'postman',
+                  POSTMAN_CONTAINER,
                   '--label',
                   'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
                   'quay.io/microcks/microcks-postman-runtime:latest',
@@ -398,7 +398,7 @@ const App = () => {
               '--label',
               'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
               '--hostname',
-              'kafka',
+              KAFKA_CONTAINER,
               '-p',
               `${9092 + config.portOffset}:${9092 + config.portOffset}`,
               '-p',
@@ -406,7 +406,7 @@ const App = () => {
               'vectorized/redpanda:v22.2.2',
               `redpanda start --overprovisioned --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false --kafka-addr PLAINTEXT://0.0.0.0:19092,EXTERNAL://0.0.0.0:${
                 9092 + config.portOffset
-              } --advertise-kafka-addr PLAINTEXT://kafka:19092,EXTERNAL://localhost:${
+              } --advertise-kafka-addr PLAINTEXT://${KAFKA_CONTAINER}:19092,EXTERNAL://localhost:${
                 9092 + config.portOffset
               }`,
             ];
@@ -443,7 +443,7 @@ const App = () => {
                   '--network',
                   EXTENSION_NETWORK,
                   '--hostname',
-                  'microcks-async-minion',
+                  ASYNC_MINION_CONTAINER,
                   '-v',
                   volumeDir + '/config:/deployments/config',
                   '-e',
