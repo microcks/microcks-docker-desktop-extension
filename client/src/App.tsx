@@ -276,7 +276,6 @@ const App = () => {
                 '--hostname',
                 MONGO_CONTAINER,
                 '-v',
-                //volumeDir + '/data:/data/db',
                 EXTENSION_VOLUME + ':/data/db',
                 '--label',
                 'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
@@ -312,17 +311,17 @@ const App = () => {
             '-e',
             'KEYCLOAK_ENABLED=false',
             '-e',
-            'KAFKA_BOOTSTRAP_SERVER=kafka:19092',
+            `KAFKA_BOOTSTRAP_SERVER=${KAFKA_CONTAINER}:19092`,
             '-e',
-            'SPRING_DATA_MONGODB_URI=mongodb://microcks-mongodb:27017',
+            `SPRING_DATA_MONGODB_URI=mongodb://${MONGO_CONTAINER}:27017`,
             '-e',
             'SPRING_DATA_MONGODB_DATABASE=microcks',
             '-e',
-            'TEST_CALLBACK_URL=http://microcks:8080',
+            `TEST_CALLBACK_URL=http://${APP_CONTAINER}:8080`,
             '-e',
-            'ASYNC_MINION_URL=http://microcks-async-minion:8081',
+            `ASYNC_MINION_URL=http://${ASYNC_MINION_CONTAINER}:8081`,
             '-e',
-            'POSTMAN_RUNNER_URL=http://postman:3000',
+            `POSTMAN_RUNNER_URL=http://${POSTMAN_CONTAINER}:3000`,
             '-p',
             `${8080 + config.portOffset}:8080`,
             '-p',
@@ -603,6 +602,7 @@ const App = () => {
       const postmanRes = await ddClient.docker.cli.exec('stop', [
         POSTMAN_CONTAINER
       ]);
+      console.log('postman res: ', postmanRes)
       if (event && !postmanRes.code) {
         setPostmanStatus({ ...postmanStatus, isRunning: false });
       }
@@ -612,6 +612,7 @@ const App = () => {
         KAFKA_CONTAINER,
         ASYNC_MINION_CONTAINER,
       ]);
+      console.log('async res: ', asyncRes)
       if (event && !asyncRes.code) {
         setKafkaStatus({ ...kafkaStatus, isRunning: false });
         setAsyncMinionStatus({ ...asyncMinionStatus, isRunning: false });
