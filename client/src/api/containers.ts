@@ -32,23 +32,22 @@ export async function getContainerInfo(
   const info = new ContainerStatus(false, false);
 
   try {
-    const containerInfo = await ddClient.docker.cli.exec('inspect', [
-      container,
-    ]);
+    const containerInfo:any = await ddClient.docker.listContainers(
+      { all: true, filters: JSON.stringify({ name: ["^\/"+container+"$"] }) });
 
-    var infoObj = containerInfo.parseJsonObject();
-    if (infoObj != null && infoObj[0] != null) {
+    console.log("listContainer: " + container , containerInfo)
+
+    if (containerInfo?.length) {
       info.exists = true;
-      var containerObj = infoObj[0];
-      if (containerObj.State?.Status === 'running') {
+      var containerObj = containerInfo[0];
+      if (containerObj.State === 'running') {
         info.isRunning = true;
       }
-      console.log('bindings', containerObj.HostConfig?.PortBindings);
-      const keys = Object.keys(containerObj.HostConfig?.PortBindings).sort((a, b) => Number(a.substring(0, a.length - 4)) - Number(b.substring(0, b.length - 4)));
-      console.log('keys: ', keys)
-      if (keys.length) {
+      const ports = containerObj.Ports.filter((p: any) => p.PublicPort != undefined).sort((a: any, b: any) => a.PublicPort - b.PublicPort);
+      console.log('ports', ports);
+      if (ports.length) {
         info.mappedPort =
-          containerObj.HostConfig?.PortBindings?.[keys[0]][0]?.HostPort;
+          ports[0].PublicPort;
       }
     } else {
       info.exists = false;
