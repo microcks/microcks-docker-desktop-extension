@@ -740,16 +740,18 @@ const App = () => {
 
   const checkHealth = async () => {
     try {
-      console.log('checking health');
-      const res = await fetch(
-        `http://localhost:${8080 + config.portOffset}/api/health`,
-      );
-      console.log('health status: ', res.status);
-      if (res.status == 200) {
-        /* Clean up interval */
-        setIsReady(true);
-        /* Enable UI */
-        setIsLoading(false);
+      if (!isReady) {
+        console.log('checking health');
+        const res = await fetch(
+          `http://localhost:${8080 + config.portOffset || 8080}/api/health`,
+        );
+        console.log('health status: ', res.status);
+        if (res.status == 200) {
+          /* Clean up interval */
+          setIsReady(true);
+          /* Enable UI */
+          setIsLoading(false);
+        }
       }
     } catch (e) {
       if (typeof e === 'string') {
