@@ -60,7 +60,6 @@ import {
   EXTENSION_NETWORK,
   EXTENSION_VOLUME,
   KAFKA_CONTAINER,
-  MONGO_CONTAINER,
   POSTMAN_CONTAINER,
 } from './utils/constants';
 import Services from './components/Services';
@@ -90,7 +89,6 @@ const App = () => {
 
   const [appStatus, setAppStatus] = useState({} as ContainerStatus);
   const [postmanStatus, setPostmanStatus] = useState({} as ContainerStatus);
-  const [mongoStatus, setMongoStatus] = useState({} as ContainerStatus);
   const [kafkaStatus, setKafkaStatus] = useState({} as ContainerStatus);
   const [asyncMinionStatus, setAsyncMinionStatus] = useState(
     {} as ContainerStatus,
@@ -165,7 +163,6 @@ const App = () => {
 
     const launch = async () => {
       const res = await launchMicrocks();
-      // setIsLoading(false);
       setLaunched(false);
     };
 
@@ -223,7 +220,6 @@ const App = () => {
 
     getContainerInfo(APP_CONTAINER).then((info) => setAppStatus(info));
     getContainerInfo(POSTMAN_CONTAINER).then((info) => setPostmanStatus(info));
-    getContainerInfo(MONGO_CONTAINER).then((info) => setMongoStatus(info));
     getContainerInfo(KAFKA_CONTAINER).then((info) => setKafkaStatus(info));
     getContainerInfo(ASYNC_MINION_CONTAINER).then((info) =>
       setAsyncMinionStatus(info),
@@ -261,33 +257,6 @@ const App = () => {
           ? `//${appDir.replace(/\\/g, '/').replace('C:', 'c')}`
           : appDir;
 
-        console.log('mongostatus', mongoStatus);
-        if (mongoStatus && !mongoStatus.isRunning) {
-          if (!mongoStatus.exists) {
-            console.log('Creating ', MONGO_CONTAINER);
-            const mongoRes = ddClient.docker.cli.exec(
-              'run',
-              [
-                '-d',
-                '--name',
-                MONGO_CONTAINER,
-                '--network',
-                EXTENSION_NETWORK,
-                '--hostname',
-                MONGO_CONTAINER,
-                '-v',
-                EXTENSION_VOLUME + ':/data/db',
-                '--label',
-                'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
-                'mongo:3.4.23',
-              ],
-              { stream: buildStreamingOpts(MONGO_CONTAINER, setMongoStatus) },
-            );
-          } else {
-            startContainer(MONGO_CONTAINER);
-          }
-        }
-
         console.log('appstatus', appStatus);
         if (appStatus && !appStatus.isRunning) {
           const params = [
@@ -300,6 +269,8 @@ const App = () => {
             APP_CONTAINER,
             '-v',
             volumeDir + '/config:/deployments/config',
+            '-v',
+            volumeDir + '/data:/data',
             '-e',
             'JAVA_OPTIONS=-XX:+TieredCompilation -XX:TieredStopAtLevel=2',
             '-e',
@@ -307,15 +278,13 @@ const App = () => {
             '-e',
             'SERVICES_UPDATE_INTERVAL=0 0 0/2 * * *',
             '-e',
-            'SPRING_PROFILES_ACTIVE=prod',
+            'SPRING_PROFILES_ACTIVE=uber',
             '-e',
             'KEYCLOAK_ENABLED=false',
             '-e',
             `KAFKA_BOOTSTRAP_SERVER=${KAFKA_CONTAINER}:19092`,
             '-e',
-            `SPRING_DATA_MONGODB_URI=mongodb://${MONGO_CONTAINER}:27017`,
-            '-e',
-            'SPRING_DATA_MONGODB_DATABASE=microcks',
+            `MONGODB_STORAGE_PATH=/data/microcks.mv`,
             '-e',
             `TEST_CALLBACK_URL=http://${APP_CONTAINER}:8080`,
             '-e',
@@ -328,7 +297,7 @@ const App = () => {
             `${9090 + config.portOffset}:9090`,
             '--label',
             'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
-            'quay.io/microcks/microcks:latest',
+            'quay.io/microcks/microcks-uber:latest',
           ];
           if (!appStatus.exists) {
             console.log('Creating ', APP_CONTAINER);
@@ -497,9 +466,6 @@ const App = () => {
         case APP_CONTAINER:
           setAppStatus({ ...appStatus, exists: false });
           break;
-        case MONGO_CONTAINER:
-          setMongoStatus({ ...mongoStatus, exists: false });
-          break;
         case POSTMAN_CONTAINER:
           setPostmanStatus({ ...postmanStatus, exists: false });
           break;
@@ -525,9 +491,6 @@ const App = () => {
         switch (container) {
           case APP_CONTAINER:
             setAppStatus({ ...appStatus, isRunning: true });
-            break;
-          case MONGO_CONTAINER:
-            setMongoStatus({ ...mongoStatus, isRunning: true });
             break;
           case POSTMAN_CONTAINER:
             setPostmanStatus({ ...postmanStatus, isRunning: true });
@@ -556,9 +519,6 @@ const App = () => {
       switch (container) {
         case APP_CONTAINER:
           setAppStatus({ ...appStatus, isRunning: false });
-          break;
-        case MONGO_CONTAINER:
-          setMongoStatus({ ...mongoStatus, isRunning: false });
           break;
         case POSTMAN_CONTAINER:
           setPostmanStatus({ ...postmanStatus, isRunning: false });
@@ -590,13 +550,11 @@ const App = () => {
       ddClient.desktopUI.toast.success('Stopping Microcks...');
     }
     const result = await ddClient.docker.cli.exec('stop', [
-      MONGO_CONTAINER,
       APP_CONTAINER,
     ]);
     console.log('stop res: ', result);
     if (event && !result.code) {
       setAppStatus({ ...appStatus, isRunning: false });
-      setMongoStatus({ ...mongoStatus, isRunning: false });
     }
     if (config.postmanEnabled) {
       const postmanRes = await ddClient.docker.cli.exec('stop', [
@@ -648,13 +606,11 @@ const App = () => {
       const result = await ddClient.docker.cli.exec('rm', [
         '--force',
         '-v',
-        MONGO_CONTAINER,
         APP_CONTAINER,
       ]);
       console.log('result delete', result);
       if (!result.code) {
         setAppStatus({ ...appStatus, exists: false, isRunning: false });
-        setMongoStatus({ ...mongoStatus, exists: false, isRunning: false });
       }
     } catch (error: any) {
       console.error(error.stderr);
