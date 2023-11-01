@@ -46,7 +46,7 @@ const Settings: React.FC<Props> = ({
   handleCloseDialog,
   config,
 }) => {
-  const [{ portOffset, asyncEnabled, postmanEnabled }, setLocalConfig] = useState(config);
+  const [{ portOffset, asyncEnabled, postmanEnabled, aicopilotEnabled, openAiApiKey }, setLocalConfig] = useState(config);
 
   useEffect(() => {
     if (config) {
@@ -58,7 +58,7 @@ const Settings: React.FC<Props> = ({
     const { name, valueAsNumber, value, checked } = event.target;
     setLocalConfig((prevState) => ({
       ...prevState,
-      [name]: name === 'portOffset' ? valueAsNumber : checked,
+      [name]: name === 'portOffset' ? valueAsNumber : name === 'openAiApiKey' ? value : checked,
     }));
   };
 
@@ -87,7 +87,11 @@ const Settings: React.FC<Props> = ({
                   onChange={handleChange}
                 />
               }
-              label={<Typography variant="subtitle1">Enable Asynchronous APIs</Typography>}
+              label={
+                <Typography variant="subtitle1">
+                  Enable Asynchronous APIs
+                </Typography>
+              }
             />
             <FormControlLabel
               control={
@@ -97,8 +101,39 @@ const Settings: React.FC<Props> = ({
                   onChange={handleChange}
                 />
               }
-              label={<Typography variant="subtitle1">Enable testing with Postman</Typography>}
+              label={
+                <Typography variant="subtitle1">
+                  Enable testing with Postman
+                </Typography>
+              }
             />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="aicopilotEnabled"
+                  checked={aicopilotEnabled || false}
+                  onChange={handleChange}
+                />
+              }
+              label={
+                <Typography variant="subtitle1">Enable AI Assistance</Typography>
+              }
+            />
+            {aicopilotEnabled && (
+              <TextField
+                id="openAiApiKey"
+                name="openAiApiKey"
+                margin="none"
+                variant="standard"
+                type="text"
+                label={
+                  <Typography variant="subtitle1">OpenAI API Key:</Typography>
+                }
+                value={openAiApiKey}
+                onChange={handleChange}
+                helperText="Currently, only OpenAI is implemented"
+              />
+            )}
           </FormControl>
           <TextField
             id="portoffset"
@@ -121,10 +156,22 @@ const Settings: React.FC<Props> = ({
               Microcks will use the following ports:
             </Typography>
             <ul>
-              <li><code>{8080 + portOffset}</code> for main webapp</li>
-              <li><code>{9090 + portOffset}</code> for gRPC endpoint</li>
-              {asyncEnabled && (<li><code>{9092 + portOffset}</code> for Kafka broker</li>)}
-              {asyncEnabled && (<li><code>{8081 + portOffset}</code> for WebSocket endpoint</li>)}
+              <li>
+                <code>{8080 + portOffset}</code> for main webapp
+              </li>
+              <li>
+                <code>{9090 + portOffset}</code> for gRPC endpoint
+              </li>
+              {asyncEnabled && (
+                <li>
+                  <code>{9092 + portOffset}</code> for Kafka broker
+                </li>
+              )}
+              {asyncEnabled && (
+                <li>
+                  <code>{8081 + portOffset}</code> for WebSocket endpoint
+                </li>
+              )}
             </ul>
           </Box>
         </Stack>
@@ -140,6 +187,8 @@ const Settings: React.FC<Props> = ({
             handleClose({
               asyncEnabled: asyncEnabled,
               postmanEnabled: postmanEnabled,
+              aicopilotEnabled: aicopilotEnabled,
+              openAiApiKey: openAiApiKey,
               portOffset: portOffset,
             })
           }
