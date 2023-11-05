@@ -42,13 +42,9 @@ export async function isWindows(): Promise<boolean> {
 
 /**
  * Executes a command on the host machine. Results and outputs are returned when the process is closed.
- * @param unixCmd command, binary or script to run on macOS and Linux machines.
- * @param windowsCmd command, binary or script to run on Windows machines.
+ * @param cmd command, binary or script to run on Windows machines.
  * @param args
  */
- export async function execOnHost(unixCmd: string, windowsCmd: string, args: string[]): Promise<any> {
-  if (await isWindows()) {
-    return ddClient.extension.host?.cli.exec(windowsCmd, args);
-  }
-  return ddClient.extension.host?.cli.exec(unixCmd, args);
+ export async function execOnHost(cmd: string, args: string[]): Promise<any> {
+  return ddClient.extension.host?.cli.exec(cmd, args);
 }

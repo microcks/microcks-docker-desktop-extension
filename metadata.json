@@ -33,6 +33,9 @@
         "windows": [{ "path": "/host/windows/writeconf.bat" }]
       },
       {
+        "windows": [{ "path": "/host/windows/writefeatures.bat" }]
+      },
+      {
         "darwin": [{ "path": "/host/unix/writeproperties.sh" }],
         "linux": [{ "path": "/host/unix/writeproperties.sh" }],
         "windows": [{ "path": "/host/windows/writeproperties.bat" }]

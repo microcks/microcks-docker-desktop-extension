@@ -17,9 +17,15 @@
  * under the License.
  */
 
-export const APPLICATION_PROPERTIES = `
+export const APPLICATION_PROPERTIES = `# File: application.properties
 # Async mocking support.
 async-api.enabled=true
+
+# AI Copilot configuration properties
+ai-copilot.enabled=OPENAPI_ENABLED
+ai-copilot.implementation=openai
+ai-copilot.openai.api-key=OPENAPI_KEY
+ai-copilot.openai.timeout=20
 
 # Access to Microcks API server.
 %docker-compose.io.github.microcks.minion.async.client.MicrocksAPIConnector/mp-rest/url=http://microcks:8080
@@ -35,15 +41,15 @@ async-api.enabled=true
 %docker-compose.mp.messaging.incoming.microcks-services-updates.bootstrap.servers=kafka:19092
 
 # Explicitly telling the minion the protocols we want to support
-%docker-compose.minion.supported-bindings=KAFKA,WS
-`;
+%docker-compose.minion.supported-bindings=KAFKA,WS`;
 
-export const FEATURES_PROPERTIES = `
+export const FEATURES_PROPERTIES = `# File: features.properties
+features.feature.ai-copilot.enabled=OPENAPI_ENABLED
+
 features.feature.async-api.enabled=true
 features.feature.async-api.frequencies=3,10,30
 features.feature.async-api.default-binding=KAFKA
 features.feature.async-api.endpoint-KAFKA=localhost:9092
 features.feature.async-api.endpoint-MQTT=my-mqtt-broker.apps.try.microcks.io:1883
 features.feature.async-api.endpoint-AMQP=my-amqp-broker.apps.try.microcks.io:5672
-features.feature.async-api.endpoint-WS=localhost:8081
-`;
+features.feature.async-api.endpoint-WS=localhost:8081`;

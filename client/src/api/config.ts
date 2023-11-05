@@ -24,7 +24,10 @@ import { execOnHost, isWindows, throwErrorAsString } from './utils';
 export async function initializeFileSystem(): Promise<boolean> {
   let cmdResult;
   try {
-    cmdResult = await execOnHost('createvolumes.sh', 'createvolumes.bat', []);
+    cmdResult = await execOnHost(
+      (await isWindows()) ? 'createvolumes.bat' : 'createvolumes.sh',
+      [],
+    );
   } catch (e: any) {
     console.error('Filesystem intialization error: ' + e);
     return false;
@@ -44,7 +47,10 @@ export async function initializeFileSystem(): Promise<boolean> {
 export async function getHome(): Promise<string> {
   let cmdResult;
   try {
-    cmdResult = await execOnHost('readhome.sh', 'readhome.bat', []);
+    cmdResult = await execOnHost(
+      (await isWindows()) ? 'readhome.bat' : 'readhome.sh',
+      [],
+    );
   } catch (e: any) {
     throwErrorAsString(e);
   }
@@ -55,7 +61,10 @@ export async function getHome(): Promise<string> {
 export async function getExtensionConfig(): Promise<ExtensionConfig> {
   let cmdResult;
   try {
-    cmdResult = await execOnHost('readconf.sh', 'readconf.bat', []);
+    cmdResult = await execOnHost(
+      (await isWindows()) ? 'readconf.bat' : 'readconf.sh',
+      [],
+    );
   } catch (e: any) {
     if (
       e.stderr !== undefined &&
@@ -81,9 +90,14 @@ export async function getExtensionConfig(): Promise<ExtensionConfig> {
 export async function writeExtensionConfig(config: ExtensionConfig) {
   let cmdResult;
   try {
-    cmdResult = await execOnHost('writeconf.sh', 'writeconf.bat', 
-      await isWindows() ? [JSON.stringify(config)]: ['"' + JSON.stringify(config).replaceAll('"', '\\"') + '"']
-    );
+    if (await isWindows()) {
+      cmdResult = await execOnHost('writeconf.bat', [JSON.stringify(config)]);
+    } else {
+      cmdResult = await execOnHost('writeconf.sh', [
+        '"' + JSON.stringify(config).replaceAll('"', '\\"') + '"',
+      ]);
+    }
+    console.log(cmdResult)
   } catch (e: any) {
     throwErrorAsString(e);
   }
@@ -96,22 +110,47 @@ export async function writePropertiesFiles(config: ExtensionConfig) {
   const applicationProperties = APPLICATION_PROPERTIES;
   const featuresProperties = FEATURES_PROPERTIES;
 
-  console.log("Writing properties file with offset: " + config.portOffset);
-  const customizedFeaturesProperties = featuresProperties
-      .replaceAll('localhost:9092', 'localhost:' + (9092 + config.portOffset))
-      .replaceAll('localhost:8081', 'localhost:' + (8081 + config.portOffset))
+  console.log('Writing properties file with offset: ' + config.portOffset);
+
   const customizedApplicationProperties = applicationProperties
-      .replaceAll('microcks:8080', APP_CONTAINER + ':8080')
-      .replaceAll('kafka:19092', KAFKA_CONTAINER + ':19092')
-  
+    .replaceAll('microcks:8080', APP_CONTAINER + ':8080')
+    .replaceAll('kafka:19092', KAFKA_CONTAINER + ':19092')
+    .replaceAll('OPENAPI_ENABLED', config.aicopilotEnabled?.toString())
+    .replaceAll('OPENAPI_KEY', config.openAiApiKey)
+    .replaceAll(/(\r\n|\r|\n)/g,'___' );
+
+  console.log(customizedApplicationProperties);
+
+  const customizedFeaturesProperties = featuresProperties
+    .replaceAll('localhost:9092', 'localhost:' + (9092 + config.portOffset))
+    .replaceAll('localhost:8081', 'localhost:' + (8081 + config.portOffset))
+    .replaceAll('OPENAPI_ENABLED', config.aicopilotEnabled?.toString())
+    .replaceAll(/(\r\n|\r|\n)/g,'___');
+
+  console.log(customizedFeaturesProperties);
+
   let cmdResult;
   try {
-    cmdResult = await execOnHost(
-      'writeproperties.sh',
-      'writeproperties.bat',
-      ['"' + customizedApplicationProperties + '"', '"' + customizedFeaturesProperties + '"']
-    );
+    if (await isWindows()) {
+      cmdResult = await execOnHost(
+        'writeproperties.bat',
+        ['"' + customizedApplicationProperties + '"']
+      );
+      console.log(cmdResult)
+      cmdResult = await execOnHost(
+        'writefeatures.bat',
+        ['"' + customizedFeaturesProperties + '"']
+        );
+      console.log(cmdResult)
+    }
+    else {
+      cmdResult = await execOnHost(
+        'writeproperties.sh',
+        ['"' + customizedApplicationProperties + '"', '"' + customizedFeaturesProperties + '"']
+      );
+    }
   } catch (e: any) {
+    console.log(e)
     throwErrorAsString(e);
   }
 }
