@@ -77,8 +77,8 @@ const Settings: React.FC<Props> = ({
     >
       <DialogTitle>Settings</DialogTitle>
       <DialogContent>
-        <Stack justifyContent="center" alignItems="flex-start" spacing={3}>
-          <FormControl margin="normal">
+        <Stack justifyContent="center" alignItems="flex-start" spacing={2}>
+          <FormControl fullWidth>
             <FormControlLabel
               control={
                 <Checkbox
@@ -123,12 +123,10 @@ const Settings: React.FC<Props> = ({
               <TextField
                 id="openAiApiKey"
                 name="openAiApiKey"
-                margin="none"
+                margin="dense"
                 variant="standard"
-                type="text"
-                label={
-                  <Typography variant="subtitle1">OpenAI API Key:</Typography>
-                }
+                type="password"
+                label={"OpenAI API Key:"}
                 value={openAiApiKey}
                 onChange={handleChange}
                 helperText="Currently, only OpenAI is implemented"
@@ -141,7 +139,7 @@ const Settings: React.FC<Props> = ({
             margin="normal"
             variant="standard"
             type="number"
-            label={<Typography variant="subtitle1">Port Offset:</Typography>}
+            label={"Port Offset"}
             value={portOffset}
             onChange={handleChange}
             helperText="Use an offset to avoid port conflicts"

@@ -20,6 +20,6 @@ export class ExtensionConfig {
   asyncEnabled: boolean = false;
   postmanEnabled: boolean = false;
   aicopilotEnabled: boolean = false;
-  openAiApiKey: String = '';
+  openAiApiKey: string = '';
   portOffset: number = 0;
 }
