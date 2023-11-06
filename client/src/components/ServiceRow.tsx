@@ -66,6 +66,7 @@ const ServiceRow = (props: { row: Service; config: ExtensionConfig }) => {
     } else if (service.type === 'GENERIC_REST') {
       result += '/dynarest/';
       result += encodeUrl(service.name) + '/' + service.version;
+      result += operation.name.replace(operation.method + " ", '');
     } else if (service.type === 'GRPC') {
       result = `http://localhost:${9090 + config.portOffset}`;
     } else if (service.type === 'EVENT') {
