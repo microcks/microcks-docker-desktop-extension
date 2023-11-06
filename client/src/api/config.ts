@@ -116,16 +116,14 @@ export async function writePropertiesFiles(config: ExtensionConfig) {
     .replaceAll('microcks:8080', APP_CONTAINER + ':8080')
     .replaceAll('kafka:19092', KAFKA_CONTAINER + ':19092')
     .replaceAll('OPENAPI_ENABLED', config.aicopilotEnabled?.toString())
-    .replaceAll('OPENAPI_KEY', config.openAiApiKey)
-    .replaceAll(/(\r\n|\r|\n)/g,'___' );
+    .replaceAll('OPENAPI_KEY', config.openAiApiKey);
 
   console.log(customizedApplicationProperties);
 
   const customizedFeaturesProperties = featuresProperties
     .replaceAll('localhost:9092', 'localhost:' + (9092 + config.portOffset))
     .replaceAll('localhost:8081', 'localhost:' + (8081 + config.portOffset))
-    .replaceAll('OPENAPI_ENABLED', config.aicopilotEnabled?.toString())
-    .replaceAll(/(\r\n|\r|\n)/g,'___');
+    .replaceAll('OPENAPI_ENABLED', config.aicopilotEnabled?.toString());
 
   console.log(customizedFeaturesProperties);
 
@@ -134,12 +132,12 @@ export async function writePropertiesFiles(config: ExtensionConfig) {
     if (await isWindows()) {
       cmdResult = await execOnHost(
         'writeproperties.bat',
-        ['"' + customizedApplicationProperties + '"']
+        ['"' + customizedApplicationProperties.replaceAll(/(\r\n|\r|\n)/g,'___' ) + '"']
       );
       console.log(cmdResult)
       cmdResult = await execOnHost(
         'writefeatures.bat',
-        ['"' + customizedFeaturesProperties + '"']
+        ['"' + customizedFeaturesProperties.replaceAll(/(\r\n|\r|\n)/g,'___' ) + '"']
         );
       console.log(cmdResult)
     }
