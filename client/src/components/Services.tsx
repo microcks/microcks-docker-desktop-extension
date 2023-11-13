@@ -80,7 +80,7 @@ const Services = (props: { config: ExtensionConfig }) => {
             <Table aria-label="collapsible table">
               <TableBody>
                 {services.map((service) => (
-                  <ServiceRow key={service.id} row={service} config={config} />
+                  <ServiceRow key={service.id} service={service} config={config} />
                 ))}
               </TableBody>
             </Table>

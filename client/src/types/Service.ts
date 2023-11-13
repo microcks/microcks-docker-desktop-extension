@@ -13,6 +13,7 @@ export type Service = {
   version: string;
   type: ServiceType;
   operations: Operation[];
+  messagesMap: any;
 };
 
 export type Operation = {

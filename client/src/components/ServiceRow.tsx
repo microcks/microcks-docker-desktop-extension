@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -21,16 +21,34 @@ import ServiceTypeLabel from './ServiceTypeLabel';
 import { useDockerDesktopClient } from '../utils/ddclient';
 import MockURLRow from './MockURLRow';
 import { ExtensionConfig } from '../types/ExtensionConfig';
+import { APP_CONTAINER } from '../utils/constants';
 
-const ServiceRow = (props: { row: Service; config: ExtensionConfig }) => {
+const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
   const [open, setOpen] = React.useState(false);
+  const [messagesMap, setMessagesMap] = useState<{[key: string]: []}>()
 
   const ddClient = useDockerDesktopClient();
 
-  const { row, config } = props;
+  const { service, config } = props;
+
+  const retrieveServiceDetail = async () => {
+    const result = await ddClient.docker.cli.exec('exec', [
+      APP_CONTAINER,
+      '/bin/curl',
+      '-s',
+      '-S',
+      `localhost:8080/api/services/${service.id}`,
+    ]);
+    if (result?.stderr) {
+      console.error(result.stderr);
+      return;
+    }
+    const svc = result?.parseJsonObject() as Service;
+    console.log(svc);
+    setMessagesMap(svc.messagesMap);
+  };
 
   const formatDestinationName = (
-    service: Service,
     operation: Operation,
   ): string => {
     const name =
@@ -47,16 +65,43 @@ const ServiceRow = (props: { row: Service; config: ExtensionConfig }) => {
   };
 
   const formatMockUrl = (
-    service: Service,
     operation: Operation,
-    path?: string,
+    dispatchCriteria?: string,
   ): string => {
     var result = `http://localhost:${8080 + config.portOffset}`;
 
     if (service.type === 'REST') {
       result += '/rest/';
       result += encodeUrl(service.name) + '/' + service.version;
-      result += path;
+
+      var parts:{[key: string]: string} = {};
+      var params = {};
+      var operationName = operation.name;
+      
+      if (dispatchCriteria != null) {
+        var partsCriteria = (dispatchCriteria.indexOf('?') == -1 ? dispatchCriteria : dispatchCriteria.substring(0, dispatchCriteria.indexOf('?')));
+        var paramsCriteria = (dispatchCriteria.indexOf('?') == -1 ? null : dispatchCriteria.substring(dispatchCriteria.indexOf('?') + 1));
+
+        partsCriteria = encodeUrl(partsCriteria);
+        partsCriteria.split('/').forEach((element, index, array) => {
+          if (element){
+            parts[element.split('=')[0]] = element.split('=')[1];
+          }
+        });
+      
+
+        operationName = operationName.replace(/{([a-zA-Z0-9-_]+)}/g, (match, p1, string) => {
+          return parts[p1];
+        });
+        // Support also Postman syntax with /:part
+        operationName = operationName.replace(/:([a-zA-Z0-9-_]+)/g, (match, p1, string) => {
+          return parts[p1];
+        });
+        if (paramsCriteria != null) {
+          operationName += '?' + paramsCriteria.replace(/\?/g, '&');
+        }
+      }
+      result += operationName.replace(operation.method + ' ', '');
     } else if (service.type === 'SOAP_HTTP') {
       result += '/soap/';
       result += encodeUrl(service.name) + '/' + service.version;
@@ -90,14 +135,14 @@ const ServiceRow = (props: { row: Service; config: ExtensionConfig }) => {
         </TableCell>
         <TableCell component="th" scope="row">
           <Typography variant="subtitle1" component="span">
-            {row.name}
+            {service.name}
           </Typography>
         </TableCell>
         <TableCell width="20%" align="left">
-          <ServiceTypeLabel type={row.type}></ServiceTypeLabel>
+          <ServiceTypeLabel type={service.type}></ServiceTypeLabel>
         </TableCell>
         <TableCell width="20%" align="left">
-          <Typography component="span">Version: {row.version}</Typography>
+          <Typography component="span">Version: {service.version}</Typography>
         </TableCell>
         <TableCell width="20%" align="right">
           <Button
@@ -105,7 +150,7 @@ const ServiceRow = (props: { row: Service; config: ExtensionConfig }) => {
             onClick={() =>
               ddClient.host.openExternal(
                 `http://localhost:${8080 + config.portOffset}/#/services/${
-                  row.id
+                  service.id
                 }`,
               )
             }
@@ -116,7 +161,14 @@ const ServiceRow = (props: { row: Service; config: ExtensionConfig }) => {
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
+          <Collapse
+            in={open}
+            timeout="auto"
+            unmountOnExit
+            onEnter={(node, isAppearing) => {
+              retrieveServiceDetail();
+            }}
+          >
             <Box margin={1} paddingBottom={2}>
               <TableContainer>
                 <Table size="small" aria-label="operations">
@@ -128,7 +180,7 @@ const ServiceRow = (props: { row: Service; config: ExtensionConfig }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {row.operations
+                    {service.operations
                       .sort((a, b) => a.name.length - b.name.length)
                       .map((operation) => (
                         <TableRow key={operation.name}>
@@ -157,7 +209,7 @@ const ServiceRow = (props: { row: Service; config: ExtensionConfig }) => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            {row.type.includes('EVENT') &&
+                            {service.type.includes('EVENT') &&
                             !config.asyncEnabled ? (
                               <Box
                                 sx={{
@@ -175,31 +227,27 @@ const ServiceRow = (props: { row: Service; config: ExtensionConfig }) => {
                                   Async APIs are disabled
                                 </Typography>
                               </Box>
-                            ) : operation.resourcePaths ? (
+                            ) : messagesMap ? (
                               <List>
-                                {operation.resourcePaths.map((path, index) => (
-                                  <ListItem key={index} disablePadding>
-                                    <MockURLRow
-                                      bindings={operation.bindings}
-                                      destination={formatDestinationName(
-                                        row,
-                                        operation,
-                                      )}
-                                      mockURL={formatMockUrl(
-                                        row,
-                                        operation,
-                                        path,
-                                      )}
-                                    />
-                                  </ListItem>
-                                ))}
+                                {messagesMap[operation.name].map(
+                                  (value: any, index) => (
+                                    <ListItem key={index} disablePadding>
+                                      <MockURLRow
+                                        bindings={operation.bindings}
+                                        destination={formatDestinationName(
+                                          operation,
+                                        )}
+                                        mockURL={formatMockUrl(
+                                          operation,
+                                          value.response.dispatchCriteria,
+                                        )}
+                                      />
+                                    </ListItem>
+                                  ),
+                                )}
                               </List>
                             ) : (
-                              <>
-                                <MockURLRow
-                                  mockURL={formatMockUrl(row, operation)}
-                                />
-                              </>
+                              <MockURLRow mockURL={formatMockUrl(operation)} />
                             )}
                           </TableCell>
                         </TableRow>
