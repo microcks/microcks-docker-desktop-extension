@@ -50,7 +50,7 @@ const Services = (props: { config: ExtensionConfig }) => {
 
   const ddClient = useDockerDesktopClient();
 
-  const getServices = async () => {
+  const retrieveServices = async () => {
     const result = await ddClient.docker.cli.exec('exec', [
       APP_CONTAINER,
       '/bin/curl',
@@ -68,19 +68,28 @@ const Services = (props: { config: ExtensionConfig }) => {
   };
 
   useEffect(() => {
-    getServices();
+    retrieveServices();
   }, []);
 
   return (
     <Box sx={{ width: '100%', alignItems: 'center' }} my={5}>
-      <Typography variant="h3">Services</Typography>
+      <Box display="flex" flex="row" justifyContent="space-between">
+        <Typography variant="h3">Services</Typography>
+        <Button variant="contained" size="large" onClick={() => {}}>
+          + Add Service
+        </Button>
+      </Box>
       <Box my={2}>
         <Stack>
           <TableContainer>
             <Table aria-label="collapsible table">
               <TableBody>
                 {services.map((service) => (
-                  <ServiceRow key={service.id} service={service} config={config} />
+                  <ServiceRow
+                    key={service.id}
+                    service={service}
+                    config={config}
+                  />
                 ))}
               </TableBody>
             </Table>
