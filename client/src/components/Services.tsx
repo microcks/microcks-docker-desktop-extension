@@ -16,34 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Collapse from '@mui/material/Collapse';
-import IconButton from '@mui/material/IconButton';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { APP_CONTAINER } from '../utils/constants';
 import { useDockerDesktopClient } from '../utils/ddclient';
 
-import { ExtensionConfig } from '../types/ExtensionConfig';
-import MockURLRow from './MockURLRow';
-import ServiceTypeLabel from './ServiceTypeLabel';
-import { Operation, Service } from '../types/Service';
-import ServiceRow from './ServiceRow';
 import UploadIcon from '@mui/icons-material/Upload';
+import { ExtensionConfig } from '../types/ExtensionConfig';
+import { Service } from '../types/Service';
 import ImportDialog from './ImportDialog';
+import ServiceRow from './ServiceRow';
 
 const Services = ({config}: { config: ExtensionConfig }) => {
   const [services, setServices] = useState<Service[]>([]);
@@ -103,7 +91,7 @@ const Services = ({config}: { config: ExtensionConfig }) => {
         </Stack>
       </Box>
     </Box>
-    <ImportDialog isDialogOpen={isImportDialog} closeHandler={handleCloseImportDialog}/>
+    <ImportDialog config={config} isDialogOpen={isImportDialog} closeHandler={handleCloseImportDialog}/>
     </>
   );
 };
