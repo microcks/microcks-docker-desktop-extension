@@ -9,20 +9,43 @@ import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import UploadIcon from '@mui/icons-material/Upload';
 import React, { useState } from 'react';
+import { ExtensionConfig } from '../types/ExtensionConfig';
 
 const ImportDialog: React.FC<{
   isDialogOpen: boolean;
+  config: ExtensionConfig;
   closeHandler: () => void;
-}> = ({ isDialogOpen, closeHandler }) => {
-  const [file, setFile] = useState<File>();
+}> = ({ isDialogOpen, config, closeHandler }) => {
+  const [fileToUpload, setFileToUpload] = useState<File>();
   const [isSecondary, setIsSecondary] = useState(false);
+
+  const uploadFile = async (event: React.MouseEvent<HTMLElement>) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', fileToUpload as File);
+
+      const result = await fetch(
+        `http://localhost:${
+          8080 + config.portOffset || 8080
+        }/api/artifact/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        },
+      );
+
+      if (result.ok) {
+        closeHandler()
+      }
+    } catch (error) {}
+  };
 
   const handleClose = () => {
     closeHandler();
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFile(event.target.files?.[0]);
+    setFileToUpload(event.target.files?.[0]);
   };
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,8 +90,8 @@ const ImportDialog: React.FC<{
           variant="contained"
           color="primary"
           size="large"
-          onClick={(event) => {}}
-          disabled={file === undefined}
+          onClick={uploadFile}
+          disabled={fileToUpload === undefined}
         >
           Import
         </Button>
