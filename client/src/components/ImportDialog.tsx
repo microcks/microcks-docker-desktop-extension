@@ -14,7 +14,7 @@ import { ExtensionConfig } from '../types/ExtensionConfig';
 const ImportDialog: React.FC<{
   isDialogOpen: boolean;
   config: ExtensionConfig;
-  closeHandler: () => void;
+  closeHandler: (refresh?:boolean) => void;
 }> = ({ isDialogOpen, config, closeHandler }) => {
   const [fileToUpload, setFileToUpload] = useState<File>();
   const [isSecondary, setIsSecondary] = useState(false);
@@ -35,7 +35,7 @@ const ImportDialog: React.FC<{
       );
 
       if (result.ok) {
-        closeHandler()
+        closeHandler(true)
       }
     } catch (error) {}
   };

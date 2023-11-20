@@ -33,9 +33,9 @@ import { Service } from '../types/Service';
 import ImportDialog from './ImportDialog';
 import ServiceRow from './ServiceRow';
 
-const Services = ({config}: { config: ExtensionConfig }) => {
+const Services = ({ config }: { config: ExtensionConfig }) => {
   const [services, setServices] = useState<Service[]>([]);
-  const [isImportDialog, setIsImportDialog] = useState(false)
+  const [isImportDialog, setIsImportDialog] = useState(false);
 
   const ddClient = useDockerDesktopClient();
 
@@ -60,38 +60,52 @@ const Services = ({config}: { config: ExtensionConfig }) => {
     retrieveServices();
   }, []);
 
-  const handleOpenImport = () => {setIsImportDialog(true)};
+  const handleOpenImport = () => {
+    setIsImportDialog(true);
+  };
 
-  const handleCloseImportDialog = () => {setIsImportDialog(false)};
+  const handleCloseImportDialog = (refresh?: boolean) => {
+    if (refresh) retrieveServices();
+    setIsImportDialog(false);
+  };
 
   return (
     <>
-    <Box sx={{ width: '100%', alignItems: 'center' }} my={5}>
-      <Box display="flex" flex="row" justifyContent="space-between">
-        <Typography variant="h3">Services</Typography>
-        <Button startIcon={<UploadIcon/>} variant="contained" size="large" onClick={handleOpenImport}>
-          Import Service
-        </Button>
+      <Box sx={{ width: '100%', alignItems: 'center' }} my={5}>
+        <Box display="flex" flex="row" justifyContent="space-between">
+          <Typography variant="h3">Services</Typography>
+          <Button
+            startIcon={<UploadIcon />}
+            variant="contained"
+            size="large"
+            onClick={handleOpenImport}
+          >
+            Import Service
+          </Button>
+        </Box>
+        <Box my={2}>
+          <Stack>
+            <TableContainer>
+              <Table aria-label="collapsible table">
+                <TableBody>
+                  {services.map((service) => (
+                    <ServiceRow
+                      key={service.id}
+                      service={service}
+                      config={config}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Stack>
+        </Box>
       </Box>
-      <Box my={2}>
-        <Stack>
-          <TableContainer>
-            <Table aria-label="collapsible table">
-              <TableBody>
-                {services.map((service) => (
-                  <ServiceRow
-                    key={service.id}
-                    service={service}
-                    config={config}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Stack>
-      </Box>
-    </Box>
-    <ImportDialog config={config} isDialogOpen={isImportDialog} closeHandler={handleCloseImportDialog}/>
+      <ImportDialog
+        config={config}
+        isDialogOpen={isImportDialog}
+        closeHandler={handleCloseImportDialog}
+      />
     </>
   );
 };
