@@ -42,11 +42,12 @@ import MockURLRow from './MockURLRow';
 import ServiceTypeLabel from './ServiceTypeLabel';
 import { Operation, Service } from '../types/Service';
 import ServiceRow from './ServiceRow';
+import UploadIcon from '@mui/icons-material/Upload';
+import ImportDialog from './ImportDialog';
 
-const Services = (props: { config: ExtensionConfig }) => {
+const Services = ({config}: { config: ExtensionConfig }) => {
   const [services, setServices] = useState<Service[]>([]);
-
-  const { config } = props;
+  const [isImportDialog, setIsImportDialog] = useState(false)
 
   const ddClient = useDockerDesktopClient();
 
@@ -71,12 +72,17 @@ const Services = (props: { config: ExtensionConfig }) => {
     retrieveServices();
   }, []);
 
+  const handleOpenImport = () => {setIsImportDialog(true)};
+
+  const handleCloseImportDialog = () => {setIsImportDialog(false)};
+
   return (
+    <>
     <Box sx={{ width: '100%', alignItems: 'center' }} my={5}>
       <Box display="flex" flex="row" justifyContent="space-between">
         <Typography variant="h3">Services</Typography>
-        <Button variant="contained" size="large" onClick={() => {}}>
-          + Add Service
+        <Button startIcon={<UploadIcon/>} variant="contained" size="large" onClick={handleOpenImport}>
+          Import Service
         </Button>
       </Box>
       <Box my={2}>
@@ -97,6 +103,8 @@ const Services = (props: { config: ExtensionConfig }) => {
         </Stack>
       </Box>
     </Box>
+    <ImportDialog isDialogOpen={isImportDialog} closeHandler={handleCloseImportDialog}/>
+    </>
   );
 };
 

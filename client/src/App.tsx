@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { createDockerDesktopClient } from '@docker/extension-api-client';
 import React, { useEffect, useState } from 'react';
 
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
@@ -25,6 +24,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import Backdrop from '@mui/material/Backdrop';
 import IconButton from '@mui/material/IconButton';
 
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -35,8 +35,9 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
+import { ExecStreamOptions } from '@docker/extension-api-client-types/dist/v1';
+import './App.css';
 import {
   getExtensionConfig,
   getHome,
@@ -48,25 +49,23 @@ import { getContainerInfo } from './api/containers';
 import { sendMetric } from './api/metrics';
 import { ensureNetworkExists } from './api/network';
 import { ensureVolumeExists } from './api/volume';
-import './App.css';
+import AlertDialog from './components/AlertDialog';
+import ClipboardCopy from './components/ClipboardCopy';
 import DeleteDialog from './components/DeleteDialog';
 import Footer from './components/Footer';
-import Settings from './components/Settings';
+import ImportDialog from './components/ImportDialog';
+import Services from './components/Services';
+import SettingsDialog from './components/Settings';
 import { ContainerStatus } from './types/ContainerStatus';
 import { ExtensionConfig } from './types/ExtensionConfig';
 import {
   APP_CONTAINER,
   ASYNC_MINION_CONTAINER,
   EXTENSION_NETWORK,
-  EXTENSION_VOLUME,
   KAFKA_CONTAINER,
-  POSTMAN_CONTAINER,
+  POSTMAN_CONTAINER
 } from './utils/constants';
-import Services from './components/Services';
 import { useDockerDesktopClient } from './utils/ddclient';
-import { ExecStreamOptions } from '@docker/extension-api-client-types/dist/v1';
-import AlertDialog from './components/AlertDialog';
-import ClipboardCopy from './components/ClipboardCopy';
 
 const isWindows = () => {
   const platform = useDockerDesktopClient().host.platform;
@@ -725,7 +724,7 @@ const App = () => {
     setIsSettingsDialog(true);
   };
 
-  const handleCloseSettings = async (
+  const handleCloseSettingsDialog = async (
     config: ExtensionConfig | undefined | null,
   ) => {
     setIsSettingsDialog(!isSettingsDialog);
@@ -961,11 +960,11 @@ const App = () => {
           </Footer>
         </Box>
       )}
-      <Settings
+      <SettingsDialog
         config={config}
         isRunning={appStatus.isRunning}
         isDialogOpen={isSettingsDialog}
-        handleCloseDialog={handleCloseSettings}
+        closeHandler={handleCloseSettingsDialog}
       />
       <DeleteDialog
         open={openDeleteDialog}
