@@ -296,7 +296,7 @@ const App = () => {
             `${9090 + config.portOffset}:9090`,
             '--label',
             'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
-            'quay.io/microcks/microcks-uber:latest',
+            'quay.io/microcks/microcks-uber:latest-extension',
           ];
           if (!appStatus.exists) {
             console.log('Creating ', APP_CONTAINER);
