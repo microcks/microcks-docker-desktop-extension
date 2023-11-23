@@ -10,6 +10,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import UploadIcon from '@mui/icons-material/Upload';
 import React, { useState } from 'react';
 import { ExtensionConfig } from '../types/ExtensionConfig';
+import { throwErrorAsString } from '../api/utils';
 
 const ImportDialog: React.FC<{
   isDialogOpen: boolean;
@@ -23,8 +24,9 @@ const ImportDialog: React.FC<{
     try {
       const formData = new FormData();
       formData.append('file', fileToUpload as File);
+      formData.append('mainArtifact', isSecondary ? "false" : "true");
 
-      const result = await fetch(
+      const response = await fetch(
         `http://localhost:${
           8080 + config.portOffset || 8080
         }/api/artifact/upload`,
@@ -34,10 +36,16 @@ const ImportDialog: React.FC<{
         },
       );
 
-      if (result.ok) {
-        closeHandler(true)
+      if (!response.ok) {
+        console.error(response.statusText);
+        return;
       }
-    } catch (error) {}
+
+      closeHandler(true)
+
+    } catch (error) {
+      throwErrorAsString(error);
+    }
   };
 
   const handleClose = () => {

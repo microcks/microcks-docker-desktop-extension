@@ -24,10 +24,10 @@ import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 import Typography from '@mui/material/Typography';
 import { useEffect, useState } from 'react';
-import { APP_CONTAINER } from '../utils/constants';
 import { useDockerDesktopClient } from '../utils/ddclient';
 
 import UploadIcon from '@mui/icons-material/Upload';
+import { throwErrorAsString } from '../api/utils';
 import { ExtensionConfig } from '../types/ExtensionConfig';
 import { Service } from '../types/Service';
 import ImportDialog from './ImportDialog';
@@ -40,20 +40,24 @@ const Services = ({ config }: { config: ExtensionConfig }) => {
   const ddClient = useDockerDesktopClient();
 
   const retrieveServices = async () => {
-    const result = await ddClient.docker.cli.exec('exec', [
-      APP_CONTAINER,
-      '/bin/curl',
-      '-s',
-      '-S',
-      'localhost:8080/api/services',
-    ]);
-    if (result?.stderr) {
-      console.error(result.stderr);
-      return;
+    try {
+      const response = await fetch(
+        `http://localhost:${
+          8080 + config.portOffset || 8080
+        }/api/services`
+      );
+
+      if (!response.ok) {
+        console.error(response.statusText);
+        return;
+      }
+
+      const svcs = await response.json() as Service[];
+      console.log(svcs);
+      setServices(svcs);
+    } catch (error) {
+      throwErrorAsString(error);
     }
-    const svcs = result?.parseJsonObject() as Service[];
-    console.log(svcs);
-    setServices(svcs);
   };
 
   useEffect(() => {
