@@ -253,19 +253,22 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                   {messagesMap[operation.name].map(
                                     (value: ReqRespPair | UnidirEvent, index) =>
                                       value.type === 'reqRespPair' ? (
-                                        <ListItem key={index} disablePadding>
-                                          <MockURLRow
-                                            bindings={operation.bindings}
-                                            destination={formatDestinationName(
-                                              operation,
-                                            )}
-                                            mockURL={formatMockUrl(
-                                              operation,
-                                              (value as ReqRespPair).response
-                                                .dispatchCriteria,
-                                            )}
-                                          />
-                                        </ListItem>
+                                        (!service.type.includes('GRAPHQL') ||
+                                        index === 0) && (
+                                          <ListItem key={index} disablePadding>
+                                            <MockURLRow
+                                              bindings={operation.bindings}
+                                              destination={formatDestinationName(
+                                                operation,
+                                              )}
+                                              mockURL={formatMockUrl(
+                                                operation,
+                                                (value as ReqRespPair).response
+                                                  .dispatchCriteria,
+                                              )}
+                                            />
+                                          </ListItem>
+                                        )
                                       ) : value.type === 'unidirEvent' &&
                                         index === 0 ? (
                                         <ListItem key={index} disablePadding>
