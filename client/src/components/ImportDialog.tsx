@@ -1,21 +1,21 @@
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Checkbox from '@mui/material/Checkbox';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import UploadIcon from '@mui/icons-material/Upload';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
+import TextField from '@mui/material/TextField';
 import React, { useState } from 'react';
-import { ExtensionConfig } from '../types/ExtensionConfig';
 import { throwErrorAsString } from '../api/utils';
+import { ExtensionConfig } from '../types/ExtensionConfig';
 
 const ImportDialog: React.FC<{
   isDialogOpen: boolean;
   config: ExtensionConfig;
-  closeHandler: (refresh?:boolean) => void;
+  closeHandler: (refresh?: boolean) => void;
 }> = ({ isDialogOpen, config, closeHandler }) => {
   const [fileToUpload, setFileToUpload] = useState<File>();
   const [isSecondary, setIsSecondary] = useState(false);
@@ -24,7 +24,7 @@ const ImportDialog: React.FC<{
     try {
       const formData = new FormData();
       formData.append('file', fileToUpload as File);
-      formData.append('mainArtifact', isSecondary ? "false" : "true");
+      formData.append('mainArtifact', isSecondary ? 'false' : 'true');
 
       const response = await fetch(
         `http://localhost:${
@@ -41,15 +41,16 @@ const ImportDialog: React.FC<{
         return;
       }
 
-      closeHandler(true)
-
+      handleClose(true);
     } catch (error) {
       throwErrorAsString(error);
     }
   };
 
-  const handleClose = () => {
-    closeHandler();
+  const handleClose = (refresh?: boolean) => {
+    setFileToUpload(undefined);
+    setIsSecondary(false);
+    closeHandler(refresh);
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,7 +64,7 @@ const ImportDialog: React.FC<{
   return (
     <Dialog
       open={isDialogOpen}
-      onClose={(event, reason) => closeHandler()}
+      onClose={(event, reason) => handleClose()}
       fullWidth
     >
       <DialogTitle>Upload Artifact</DialogTitle>
