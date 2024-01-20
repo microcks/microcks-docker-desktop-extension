@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -8,7 +7,6 @@ import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -16,6 +14,9 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import React, { useState } from 'react';
+import { throwErrorAsString } from '../api/utils';
+import { ExtensionConfig } from '../types/ExtensionConfig';
 import {
   MessagesMap,
   Operation,
@@ -23,12 +24,9 @@ import {
   Service,
   UnidirEvent,
 } from '../types/Service';
-import ServiceTypeLabel from './ServiceTypeLabel';
 import { useDockerDesktopClient } from '../utils/ddclient';
 import MockURLRow from './MockURLRow';
-import { ExtensionConfig } from '../types/ExtensionConfig';
-import { APP_CONTAINER } from '../utils/constants';
-import { throwErrorAsString } from '../api/utils';
+import ServiceTypeLabel from './ServiceTypeLabel';
 
 const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
   const [open, setOpen] = React.useState(false);
@@ -37,6 +35,8 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
   const ddClient = useDockerDesktopClient();
 
   const { service, config } = props;
+
+  const singleRowTypes = ['GRAPHQL', 'GRPC']
 
   const retrieveServiceDetail = async () => {
     try {
@@ -253,7 +253,7 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                   {messagesMap[operation.name].map(
                                     (value: ReqRespPair | UnidirEvent, index) =>
                                       value.type === 'reqRespPair' ? (
-                                        (!service.type.includes('GRAPHQL') ||
+                                        (!singleRowTypes.includes(service.type) ||
                                         index === 0) && (
                                           <ListItem key={index} disablePadding>
                                             <MockURLRow
