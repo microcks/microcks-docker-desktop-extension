@@ -37,13 +37,13 @@ type Props = {
   config: ExtensionConfig;
   isRunning?: boolean;
   isDialogOpen: boolean;
-  handleCloseDialog: (newConfig: ExtensionConfig | undefined | null) => void;
+  closeHandler: (newConfig: ExtensionConfig | undefined | null) => void;
 };
 
 const Settings: React.FC<Props> = ({
   isDialogOpen,
   isRunning = true,
-  handleCloseDialog,
+  closeHandler,
   config,
 }) => {
   const [{ portOffset, asyncEnabled, postmanEnabled, aicopilotEnabled, openAiApiKey }, setLocalConfig] = useState(config);
@@ -63,7 +63,7 @@ const Settings: React.FC<Props> = ({
   };
 
   const handleClose = (newConfig: ExtensionConfig | undefined | null) => {
-    handleCloseDialog(newConfig);
+    closeHandler(newConfig);
     if (!newConfig) {
       setLocalConfig(config);
     }

@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -8,7 +7,6 @@ import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -16,47 +14,58 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { Operation, Service } from '../types/Service';
-import ServiceTypeLabel from './ServiceTypeLabel';
+import React, { useState } from 'react';
+import { throwErrorAsString } from '../api/utils';
+import { ExtensionConfig } from '../types/ExtensionConfig';
+import {
+  MessagesMap,
+  Operation,
+  ReqRespPair,
+  Service,
+  UnidirEvent,
+} from '../types/Service';
 import { useDockerDesktopClient } from '../utils/ddclient';
 import MockURLRow from './MockURLRow';
-import { ExtensionConfig } from '../types/ExtensionConfig';
-import { APP_CONTAINER } from '../utils/constants';
+import ServiceTypeLabel from './ServiceTypeLabel';
 
 const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
   const [open, setOpen] = React.useState(false);
-  const [messagesMap, setMessagesMap] = useState<{[key: string]: []}>()
+  const [messagesMap, setMessagesMap] = useState<MessagesMap>();
 
   const ddClient = useDockerDesktopClient();
 
   const { service, config } = props;
 
+  const singleRowTypes = ['GRAPHQL', 'GRPC']
+
   const retrieveServiceDetail = async () => {
-    const result = await ddClient.docker.cli.exec('exec', [
-      APP_CONTAINER,
-      '/bin/curl',
-      '-s',
-      '-S',
-      `localhost:8080/api/services/${service.id}`,
-    ]);
-    if (result?.stderr) {
-      console.error(result.stderr);
-      return;
+    try {
+      const response = await fetch(
+        `http://localhost:${8080 + config.portOffset || 8080}/api/services/${
+          service.id
+        }`,
+      );
+
+      if (!response.ok) {
+        console.error(response.statusText);
+        return;
+      }
+
+      const svc = (await response.json()) as Service;
+      console.log(svc);
+      setMessagesMap(svc.messagesMap);
+    } catch (error) {
+      throwErrorAsString(error);
     }
-    const svc = result?.parseJsonObject() as Service;
-    console.log(svc);
-    setMessagesMap(svc.messagesMap);
   };
 
-  const formatDestinationName = (
-    operation: Operation,
-  ): string => {
+  const formatDestinationName = (operation: Operation): string => {
     const name =
       service.name.replace(/\s/g, '').replace(/-/g, '') +
       '-' +
       service.version +
       '-' +
-      operation.name.replace(operation.method + " ", '').replace(/\//g, '-');
+      operation.name.replace(operation.method + ' ', '').replace(/\//g, '-');
     return name;
   };
 
@@ -66,7 +75,7 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
 
   const formatMockUrl = (
     operation: Operation,
-    dispatchCriteria?: string,
+    dispatchCriteria?: string | null,
   ): string => {
     var result = `http://localhost:${8080 + config.portOffset}`;
 
@@ -74,29 +83,40 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
       result += '/rest/';
       result += encodeUrl(service.name) + '/' + service.version;
 
-      var parts:{[key: string]: string} = {};
+      var parts: { [key: string]: string } = {};
       var params = {};
       var operationName = operation.name;
-      
+
       if (dispatchCriteria != null) {
-        var partsCriteria = (dispatchCriteria.indexOf('?') == -1 ? dispatchCriteria : dispatchCriteria.substring(0, dispatchCriteria.indexOf('?')));
-        var paramsCriteria = (dispatchCriteria.indexOf('?') == -1 ? null : dispatchCriteria.substring(dispatchCriteria.indexOf('?') + 1));
+        var partsCriteria =
+          dispatchCriteria.indexOf('?') == -1
+            ? dispatchCriteria
+            : dispatchCriteria.substring(0, dispatchCriteria.indexOf('?'));
+        var paramsCriteria =
+          dispatchCriteria.indexOf('?') == -1
+            ? null
+            : dispatchCriteria.substring(dispatchCriteria.indexOf('?') + 1);
 
         partsCriteria = encodeUrl(partsCriteria);
         partsCriteria.split('/').forEach((element, index, array) => {
-          if (element){
+          if (element) {
             parts[element.split('=')[0]] = element.split('=')[1];
           }
         });
-      
 
-        operationName = operationName.replace(/{([a-zA-Z0-9-_]+)}/g, (match, p1, string) => {
-          return parts[p1];
-        });
+        operationName = operationName.replace(
+          /{([a-zA-Z0-9-_]+)}/g,
+          (match, p1, string) => {
+            return parts[p1];
+          },
+        );
         // Support also Postman syntax with /:part
-        operationName = operationName.replace(/:([a-zA-Z0-9-_]+)/g, (match, p1, string) => {
-          return parts[p1];
-        });
+        operationName = operationName.replace(
+          /:([a-zA-Z0-9-_]+)/g,
+          (match, p1, string) => {
+            return parts[p1];
+          },
+        );
         if (paramsCriteria != null) {
           operationName += '?' + paramsCriteria.replace(/\?/g, '&');
         }
@@ -111,7 +131,7 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
     } else if (service.type === 'GENERIC_REST') {
       result += '/dynarest/';
       result += encodeUrl(service.name) + '/' + service.version;
-      result += operation.name.replace(operation.method + " ", '');
+      result += operation.name.replace(operation.method + ' ', '');
     } else if (service.type === 'GRPC') {
       result = `http://localhost:${9090 + config.portOffset}`;
     } else if (service.type === 'EVENT') {
@@ -228,24 +248,62 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                 </Typography>
                               </Box>
                             ) : messagesMap ? (
-                              <List>
-                                {messagesMap[operation.name].map(
-                                  (value: any, index) => (
-                                    <ListItem key={index} disablePadding>
-                                      <MockURLRow
-                                        bindings={operation.bindings}
-                                        destination={formatDestinationName(
-                                          operation,
-                                        )}
-                                        mockURL={formatMockUrl(
-                                          operation,
-                                          value.response.dispatchCriteria,
-                                        )}
-                                      />
-                                    </ListItem>
-                                  ),
-                                )}
-                              </List>
+                              messagesMap[operation.name].length ? (
+                                <List>
+                                  {messagesMap[operation.name].map(
+                                    (value: ReqRespPair | UnidirEvent, index) =>
+                                      value.type === 'reqRespPair' ? (
+                                        (!singleRowTypes.includes(service.type) ||
+                                        index === 0) && (
+                                          <ListItem key={index} disablePadding>
+                                            <MockURLRow
+                                              bindings={operation.bindings}
+                                              destination={formatDestinationName(
+                                                operation,
+                                              )}
+                                              mockURL={formatMockUrl(
+                                                operation,
+                                                (value as ReqRespPair).response
+                                                  .dispatchCriteria,
+                                              )}
+                                            />
+                                          </ListItem>
+                                        )
+                                      ) : value.type === 'unidirEvent' &&
+                                        index === 0 ? (
+                                        <ListItem key={index} disablePadding>
+                                          <MockURLRow
+                                            bindings={operation.bindings}
+                                            destination={formatDestinationName(
+                                              operation,
+                                            )}
+                                            mockURL={formatMockUrl(operation)}
+                                          />
+                                        </ListItem>
+                                      ) : (
+                                        <></>
+                                      ),
+                                  )}
+                                </List>
+                              ) : (
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                  }}
+                                >
+                                  <WarningAmberIcon />
+                                  <Typography
+                                    variant="body1"
+                                    component="span"
+                                    marginLeft={1}
+                                  >
+                                    There are no examples to mock for this
+                                    operation
+                                  </Typography>
+                                </Box>
+                              )
                             ) : (
                               <MockURLRow mockURL={formatMockUrl(operation)} />
                             )}

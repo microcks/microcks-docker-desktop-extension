@@ -13,7 +13,7 @@ export type Service = {
   version: string;
   type: ServiceType;
   operations: Operation[];
-  messagesMap: any;
+  messagesMap: MessagesMap;
 };
 
 export type Operation = {
@@ -24,3 +24,19 @@ export type Operation = {
   dispatcherRules: string;
   resourcePaths: string[];
 };
+
+export type BaseMessagesMap = {
+  type: "reqRespPair" | "unidirEvent"
+}
+
+export type ReqRespPair = {
+  request: any;
+  response: any;
+} & BaseMessagesMap
+
+export type UnidirEvent = {
+  eventMessage: any
+} & BaseMessagesMap
+
+export type MessagesMap = { 
+  [key: string]: ReqRespPair[] | UnidirEvent[] };

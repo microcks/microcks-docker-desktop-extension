@@ -16,87 +16,101 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Collapse from '@mui/material/Collapse';
-import IconButton from '@mui/material/IconButton';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import React, { useEffect, useState } from 'react';
-import { APP_CONTAINER } from '../utils/constants';
+import { useEffect, useState } from 'react';
 import { useDockerDesktopClient } from '../utils/ddclient';
 
+import UploadIcon from '@mui/icons-material/Upload';
+import { throwErrorAsString } from '../api/utils';
 import { ExtensionConfig } from '../types/ExtensionConfig';
-import MockURLRow from './MockURLRow';
-import ServiceTypeLabel from './ServiceTypeLabel';
-import { Operation, Service } from '../types/Service';
+import { Service } from '../types/Service';
+import ImportDialog from './ImportDialog';
 import ServiceRow from './ServiceRow';
 
-const Services = (props: { config: ExtensionConfig }) => {
+const Services = ({ config }: { config: ExtensionConfig }) => {
   const [services, setServices] = useState<Service[]>([]);
-
-  const { config } = props;
+  const [isImportDialog, setIsImportDialog] = useState(false);
 
   const ddClient = useDockerDesktopClient();
 
   const retrieveServices = async () => {
-    const result = await ddClient.docker.cli.exec('exec', [
-      APP_CONTAINER,
-      '/bin/curl',
-      '-s',
-      '-S',
-      'localhost:8080/api/services',
-    ]);
-    if (result?.stderr) {
-      console.error(result.stderr);
-      return;
+    try {
+      const response = await fetch(
+        `http://localhost:${
+          8080 + config.portOffset || 8080
+        }/api/services`
+      );
+
+      if (!response.ok) {
+        console.error(response.statusText);
+        return;
+      }
+
+      const svcs = await response.json() as Service[];
+      console.log(svcs);
+      setServices(svcs);
+    } catch (error) {
+      throwErrorAsString(error);
     }
-    const svcs = result?.parseJsonObject() as Service[];
-    console.log(svcs);
-    setServices(svcs);
   };
 
   useEffect(() => {
     retrieveServices();
   }, []);
 
+  const handleOpenImport = () => {
+    setIsImportDialog(true);
+  };
+
+  const handleCloseImportDialog = (refresh?: boolean) => {
+    if (refresh) retrieveServices();
+    setIsImportDialog(false);
+  };
+
   return (
-    <Box sx={{ width: '100%', alignItems: 'center' }} my={5}>
-      <Box display="flex" flex="row" justifyContent="space-between">
-        <Typography variant="h3">Services</Typography>
-        <Button variant="contained" size="large" onClick={() => {}}>
-          + Add Service
-        </Button>
+    <>
+      <Box sx={{ width: '100%', alignItems: 'center' }} my={5}>
+        <Box display="flex" flex="row" justifyContent="space-between">
+          <Typography variant="h3">Services</Typography>
+          <Button
+            startIcon={<UploadIcon />}
+            variant="contained"
+            size="large"
+            onClick={handleOpenImport}
+          >
+            Import Service
+          </Button>
+        </Box>
+        <Box my={2}>
+          <Stack>
+            <TableContainer>
+              <Table aria-label="collapsible table">
+                <TableBody>
+                  {services.map((service) => (
+                    <ServiceRow
+                      key={service.id}
+                      service={service}
+                      config={config}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Stack>
+        </Box>
       </Box>
-      <Box my={2}>
-        <Stack>
-          <TableContainer>
-            <Table aria-label="collapsible table">
-              <TableBody>
-                {services.map((service) => (
-                  <ServiceRow
-                    key={service.id}
-                    service={service}
-                    config={config}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Stack>
-      </Box>
-    </Box>
+      <ImportDialog
+        config={config}
+        isDialogOpen={isImportDialog}
+        closeHandler={handleCloseImportDialog}
+      />
+    </>
   );
 };
 

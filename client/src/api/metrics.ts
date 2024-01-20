@@ -20,7 +20,7 @@ import { createDockerDesktopClient } from '@docker/extension-api-client';
 
 var clientID = "";
 
-function send(eventName: string, clientID: string, payload: Object) {
+const send = (eventName: string, clientID: string, payload: Object) => {
   fetch(`https://microcks-dde-metrics-oafcwlgvlq-ew.a.run.app/collect`, {
     method: "POST",
     body: JSON.stringify({
@@ -36,7 +36,7 @@ function send(eventName: string, clientID: string, payload: Object) {
   });
 }
 
-export function sendMetric(eventName: string, payload: Object) {
+export const sendMetric = (eventName: string, payload: Object) => {
   if (clientID !== "") {
     send(eventName, clientID, payload);
   } else {
