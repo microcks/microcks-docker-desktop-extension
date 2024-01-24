@@ -36,7 +36,7 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
 
   const { service, config } = props;
 
-  const singleRowTypes = ['GRAPHQL', 'GRPC']
+  const singleRowTypes = ['GRAPHQL', 'GRPC'];
 
   const retrieveServiceDetail = async () => {
     try {
@@ -57,88 +57,6 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
     } catch (error) {
       throwErrorAsString(error);
     }
-  };
-
-  const formatDestinationName = (operation: Operation): string => {
-    const name =
-      service.name.replace(/\s/g, '').replace(/-/g, '') +
-      '-' +
-      service.version +
-      '-' +
-      operation.name.replace(operation.method + ' ', '').replace(/\//g, '-');
-    return name;
-  };
-
-  const encodeUrl = (url: string): string => {
-    return url.replace(/\s/g, '+');
-  };
-
-  const formatMockUrl = (
-    operation: Operation,
-    dispatchCriteria?: string | null,
-  ): string => {
-    var result = `http://localhost:${8080 + config.portOffset}`;
-
-    if (service.type === 'REST') {
-      result += '/rest/';
-      result += encodeUrl(service.name) + '/' + service.version;
-
-      var parts: { [key: string]: string } = {};
-      var params = {};
-      var operationName = operation.name;
-
-      if (dispatchCriteria != null) {
-        var partsCriteria =
-          dispatchCriteria.indexOf('?') == -1
-            ? dispatchCriteria
-            : dispatchCriteria.substring(0, dispatchCriteria.indexOf('?'));
-        var paramsCriteria =
-          dispatchCriteria.indexOf('?') == -1
-            ? null
-            : dispatchCriteria.substring(dispatchCriteria.indexOf('?') + 1);
-
-        partsCriteria = encodeUrl(partsCriteria);
-        partsCriteria.split('/').forEach((element, index, array) => {
-          if (element) {
-            parts[element.split('=')[0]] = element.split('=')[1];
-          }
-        });
-
-        operationName = operationName.replace(
-          /{([a-zA-Z0-9-_]+)}/g,
-          (match, p1, string) => {
-            return parts[p1];
-          },
-        );
-        // Support also Postman syntax with /:part
-        operationName = operationName.replace(
-          /:([a-zA-Z0-9-_]+)/g,
-          (match, p1, string) => {
-            return parts[p1];
-          },
-        );
-        if (paramsCriteria != null) {
-          operationName += '?' + paramsCriteria.replace(/\?/g, '&');
-        }
-      }
-      result += operationName.replace(operation.method + ' ', '');
-    } else if (service.type === 'SOAP_HTTP') {
-      result += '/soap/';
-      result += encodeUrl(service.name) + '/' + service.version;
-    } else if (service.type === 'GRAPHQL') {
-      result += '/graphql/';
-      result += encodeUrl(service.name) + '/' + service.version;
-    } else if (service.type === 'GENERIC_REST') {
-      result += '/dynarest/';
-      result += encodeUrl(service.name) + '/' + service.version;
-      result += operation.name.replace(operation.method + ' ', '');
-    } else if (service.type === 'GRPC') {
-      result = `http://localhost:${9090 + config.portOffset}`;
-    } else if (service.type === 'EVENT') {
-      result = `localhost:${9092 + config.portOffset}`;
-    }
-
-    return result;
   };
 
   return (
@@ -194,8 +112,8 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                 <Table size="small" aria-label="operations">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Method</TableCell>
-                      <TableCell>Path</TableCell>
+                      <TableCell width="20%">Method</TableCell>
+                      <TableCell width="20%">Path</TableCell>
                       <TableCell>Mock URL</TableCell>
                     </TableRow>
                   </TableHead>
@@ -253,19 +171,20 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                   {messagesMap[operation.name].map(
                                     (value: ReqRespPair | UnidirEvent, index) =>
                                       value.type === 'reqRespPair' ? (
-                                        (!singleRowTypes.includes(service.type) ||
-                                        index === 0) && (
+                                        (!singleRowTypes.includes(
+                                          service.type,
+                                        ) ||
+                                          index === 0) && (
                                           <ListItem key={index} disablePadding>
                                             <MockURLRow
+                                              offset={config.portOffset}
+                                              operation={operation}
+                                              service={service}
                                               bindings={operation.bindings}
-                                              destination={formatDestinationName(
-                                                operation,
-                                              )}
-                                              mockURL={formatMockUrl(
-                                                operation,
+                                              dispatchCriteria={
                                                 (value as ReqRespPair).response
-                                                  .dispatchCriteria,
-                                              )}
+                                                  .dispatchCriteria
+                                              }
                                             />
                                           </ListItem>
                                         )
@@ -273,11 +192,10 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                         index === 0 ? (
                                         <ListItem key={index} disablePadding>
                                           <MockURLRow
+                                            offset={config.portOffset}
+                                            operation={operation}
+                                            service={service}
                                             bindings={operation.bindings}
-                                            destination={formatDestinationName(
-                                              operation,
-                                            )}
-                                            mockURL={formatMockUrl(operation)}
                                           />
                                         </ListItem>
                                       ) : (
@@ -305,7 +223,11 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                 </Box>
                               )
                             ) : (
-                              <MockURLRow mockURL={formatMockUrl(operation)} />
+                              <MockURLRow
+                                offset={config.portOffset}
+                                operation={operation}
+                                service={service}
+                              />
                             )}
                           </TableCell>
                         </TableRow>

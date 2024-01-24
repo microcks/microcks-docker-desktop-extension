@@ -414,6 +414,8 @@ const App = () => {
                   '-v',
                   volumeDir + '/config:/deployments/config',
                   '-e',
+                  `MICROCKS_HOST_PORT=${APP_CONTAINER}:8080`,
+                  '-e',
                   'QUARKUS_PROFILE=docker-compose',
                   '--restart',
                   'on-failure',
@@ -421,7 +423,7 @@ const App = () => {
                   `${8081 + config.portOffset}:8081`,
                   '--label',
                   'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
-                  'quay.io/microcks/microcks-async-minion:latest',
+                  'quay.io/microcks/microcks-uber-async-minion:latest',
                 ],
                 {
                   stream: buildStreamingOpts(
