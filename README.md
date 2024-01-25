@@ -3,11 +3,11 @@
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/microcks/microcks-docker-desktop-extension/build-verify.yml?branch=main&logo=github&style=for-the-badge)](https://github.com/microcks/microcks-docker-desktop-extension/actions)
 [![Container](https://img.shields.io/docker/v/microcks/microcks-docker-desktop-extension?sort=semver&color=blue&logo=docker&style=for-the-badge&label=Docker.io)](https://hub.docker.com/r/microcks/microcks-docker-desktop-extension/tags)
 [![License](https://img.shields.io/github/license/microcks/microcks?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Project Chat](https://img.shields.io/badge/chat-on_zulip-pink.svg?color=ff69b4&style=for-the-badge&logo=zulip)](https://microcksio.zulipchat.com/)
+[![Project Chat](https://img.shields.io/badge/discord-microcks-pink.svg?color=7289da&style=for-the-badge&logo=discord)](https://microcks.io/discord-invite/)
 
 This extension tries to simplify the getting started experience for developers using Microcks in their local environments. This extension will start the components to run a local deployment of Microcks using container images.
 
-For any recommendations, suggestions, feature requests and issue, head over the the project's GitHub Issues tracker.
+For any recommendations, suggestions, feature requests and issue, head over the project's GitHub Issues tracker.
 
 ## Install
 
