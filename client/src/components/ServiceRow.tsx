@@ -1,3 +1,18 @@
+/*
+ * Copyright The Microcks Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -26,6 +41,7 @@ import {
 } from '../types/Service';
 import { useDockerDesktopClient } from '../utils/ddclient';
 import MockURLRow from './MockURLRow';
+import MockDestinationsRow from './MockDestinationsRow';
 import ServiceTypeLabel from './ServiceTypeLabel';
 
 const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
@@ -57,6 +73,78 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
     } catch (error) {
       throwErrorAsString(error);
     }
+  };
+
+  const encodeUrl = (url: string): string => {
+    return url.replace(/\s/g, '+');
+  };
+
+  const formatMockUrl = (
+    operation: Operation,
+    dispatchCriteria?: string | null,
+  ): string => {
+    var result = `http://localhost:${8080 + config.portOffset}`;
+
+    if (service.type === 'REST') {
+      result += '/rest/';
+      result += encodeUrl(service.name) + '/' + service.version;
+
+      var parts: { [key: string]: string } = {};
+      var params = {};
+      var operationName = operation.name;
+
+      if (dispatchCriteria != null) {
+        var partsCriteria =
+          dispatchCriteria.indexOf('?') == -1
+            ? dispatchCriteria
+            : dispatchCriteria.substring(0, dispatchCriteria.indexOf('?'));
+        var paramsCriteria =
+          dispatchCriteria.indexOf('?') == -1
+            ? null
+            : dispatchCriteria.substring(dispatchCriteria.indexOf('?') + 1);
+
+        partsCriteria = encodeUrl(partsCriteria);
+        partsCriteria.split('/').forEach((element, index, array) => {
+          if (element) {
+            parts[element.split('=')[0]] = element.split('=')[1];
+          }
+        });
+
+        operationName = operationName.replace(
+          /{([a-zA-Z0-9-_]+)}/g,
+          (match, p1, string) => {
+            return parts[p1];
+          },
+        );
+        // Support also Postman syntax with /:part
+        operationName = operationName.replace(
+          /:([a-zA-Z0-9-_]+)/g,
+          (match, p1, string) => {
+            return parts[p1];
+          },
+        );
+        if (paramsCriteria != null) {
+          operationName += '?' + paramsCriteria.replace(/\?/g, '&');
+        }
+      }
+      result += operationName.replace(operation.method + ' ', '');
+    } else if (service.type === 'SOAP_HTTP') {
+      result += '/soap/';
+      result += encodeUrl(service.name) + '/' + service.version;
+    } else if (service.type === 'GRAPHQL') {
+      result += '/graphql/';
+      result += encodeUrl(service.name) + '/' + service.version;
+    } else if (service.type === 'GENERIC_REST') {
+      result += '/dynarest/';
+      result += encodeUrl(service.name) + '/' + service.version;
+      result += operation.name.replace(operation.method + ' ', '');
+    } else if (service.type === 'GRPC') {
+      result = `http://localhost:${9090 + config.portOffset}`;
+    } else if (service.type === 'EVENT') {
+      result = `localhost:${9092 + config.portOffset}`;
+    }
+
+    return result;
   };
 
   return (
@@ -177,30 +265,26 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                           index === 0) && (
                                           <ListItem key={index} disablePadding>
                                             <MockURLRow
-                                              offset={config.portOffset}
-                                              operation={operation}
-                                              service={service}
-                                              bindings={operation.bindings}
-                                              dispatchCriteria={
+                                              mockURL={formatMockUrl(
+                                                operation,
                                                 (value as ReqRespPair).response
                                                   .dispatchCriteria
-                                              }
+                                          )}
                                             />
                                           </ListItem>
                                         )
                                       ) : value.type === 'unidirEvent' &&
                                         index === 0 ? (
                                         <ListItem key={index} disablePadding>
-                                          <MockURLRow
-                                            offset={config.portOffset}
-                                            operation={operation}
+                                          <MockDestinationsRow
                                             service={service}
-                                            bindings={operation.bindings}
+                                            operation={operation}
+                                            config={config}
                                           />
                                         </ListItem>
                                       ) : (
                                         <></>
-                                      ),
+                                      )
                                   )}
                                 </List>
                               ) : (
@@ -223,11 +307,7 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                 </Box>
                               )
                             ) : (
-                              <MockURLRow
-                                offset={config.portOffset}
-                                operation={operation}
-                                service={service}
-                              />
+                              <MockURLRow mockURL={formatMockUrl(operation)} />
                             )}
                           </TableCell>
                         </TableRow>
