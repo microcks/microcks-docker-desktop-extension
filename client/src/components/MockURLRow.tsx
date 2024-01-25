@@ -9,62 +9,15 @@ import { useDockerDesktopClient } from '../utils/ddclient';
 import ClipboardCopy from './ClipboardCopy';
 
 interface MockURLRowProps {
-  bindings?: any;
   mockURL: string;
-  destination?: string;
 }
 
 const MockURLRow: React.FC<MockURLRowProps> = ({
-  bindings,
-  mockURL,
-  destination,
+  mockURL
 }) => {
   const ddClient = useDockerDesktopClient();
 
-  return bindings ? (
-    <>
-      {Object.keys(bindings).map((binding: any) =>
-        binding == 'KAFKA' ? (
-          <Box
-            key={binding}
-            marginLeft={1}
-            display="flex"
-            flexDirection="column"
-          >
-            <Typography variant="body1">
-              {bindings[binding].type} endpoint:{' '}
-              <Link variant="subtitle1" underline="hover">
-                {mockURL}
-              </Link>
-              <ClipboardCopy copyText={mockURL} />
-            </Typography>
-            <Typography variant="body1">
-              {bindings[binding].type} destination:{' '}
-              <Link variant="subtitle1" underline="hover">
-                {destination}
-              </Link>
-              <ClipboardCopy copyText={destination || ''} />
-            </Typography>
-          </Box>
-        ) : (
-          <Box
-            key={binding}
-            marginLeft={1}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            <WarningAmberIcon />
-            <Typography variant="body1" component="span" marginLeft={1}>
-            This extension does not support the {binding} binding at this time.
-            </Typography>
-          </Box>
-        ),
-      )}
-    </>
-  ) : (
+  return (
     <Typography noWrap>
       <Link
         onClick={() => ddClient.host.openExternal(mockURL)}

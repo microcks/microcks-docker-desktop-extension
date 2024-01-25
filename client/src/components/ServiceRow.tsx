@@ -26,6 +26,7 @@ import {
 } from '../types/Service';
 import { useDockerDesktopClient } from '../utils/ddclient';
 import MockURLRow from './MockURLRow';
+import MockDestinationsRow from './MockDestinationsRow';
 import ServiceTypeLabel from './ServiceTypeLabel';
 
 const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
@@ -57,16 +58,6 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
     } catch (error) {
       throwErrorAsString(error);
     }
-  };
-
-  const formatDestinationName = (operation: Operation): string => {
-    const name =
-      service.name.replace(/\s/g, '').replace(/-/g, '') +
-      '-' +
-      service.version +
-      '-' +
-      operation.name.replace(operation.method + ' ', '').replace(/\//g, '-');
-    return name;
   };
 
   const encodeUrl = (url: string): string => {
@@ -257,10 +248,6 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                         index === 0) && (
                                           <ListItem key={index} disablePadding>
                                             <MockURLRow
-                                              bindings={operation.bindings}
-                                              destination={formatDestinationName(
-                                                operation,
-                                              )}
                                               mockURL={formatMockUrl(
                                                 operation,
                                                 (value as ReqRespPair).response
@@ -272,12 +259,10 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                       ) : value.type === 'unidirEvent' &&
                                         index === 0 ? (
                                         <ListItem key={index} disablePadding>
-                                          <MockURLRow
-                                            bindings={operation.bindings}
-                                            destination={formatDestinationName(
-                                              operation,
-                                            )}
-                                            mockURL={formatMockUrl(operation)}
+                                          <MockDestinationsRow
+                                            service={service}
+                                            operation={operation}
+                                            config={config}
                                           />
                                         </ListItem>
                                       ) : (
