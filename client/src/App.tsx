@@ -417,13 +417,15 @@ const App = () => {
                   `MICROCKS_HOST_PORT=${APP_CONTAINER}:8080`,
                   '-e',
                   'QUARKUS_PROFILE=docker-compose',
+                  '-e',
+                  'MICROCKS_HOST_PORT=microcks:8080',
                   '--restart',
                   'on-failure',
                   '-p',
                   `${8081 + config.portOffset}:8081`,
                   '--label',
                   'com.docker.compose.project=microcks_microcks-docker-desktop-extension-desktop-extension',
-                  'quay.io/microcks/microcks-uber-async-minion:latest',
+                  'quay.io/microcks/microcks-uber-async-minion:latest-extension',
                 ],
                 {
                   stream: buildStreamingOpts(
