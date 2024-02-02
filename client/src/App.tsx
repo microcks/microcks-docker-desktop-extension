@@ -414,6 +414,8 @@ const App = () => {
                   `MICROCKS_HOST_PORT=${APP_CONTAINER}:8080`,
                   '-e',
                   'QUARKUS_PROFILE=docker-compose',
+                  '-e',
+                  'MICROCKS_HOST_PORT=microcks:8080',
                   '--restart',
                   'on-failure',
                   '-p',
