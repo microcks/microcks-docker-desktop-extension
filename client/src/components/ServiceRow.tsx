@@ -52,7 +52,7 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
 
   const { service, config } = props;
 
-  const singleRowTypes = ['GRAPHQL', 'GRPC']
+  const singleRowTypes = ['GRAPHQL', 'GRPC'];
 
   const retrieveServiceDetail = async () => {
     try {
@@ -200,8 +200,8 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                 <Table size="small" aria-label="operations">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Method</TableCell>
-                      <TableCell>Path</TableCell>
+                      <TableCell width="20%">Method</TableCell>
+                      <TableCell width="20%">Path</TableCell>
                       <TableCell>Mock URL</TableCell>
                     </TableRow>
                   </TableHead>
@@ -259,15 +259,17 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                   {messagesMap[operation.name].map(
                                     (value: ReqRespPair | UnidirEvent, index) =>
                                       value.type === 'reqRespPair' ? (
-                                        (!singleRowTypes.includes(service.type) ||
-                                        index === 0) && (
+                                        (!singleRowTypes.includes(
+                                          service.type,
+                                        ) ||
+                                          index === 0) && (
                                           <ListItem key={index} disablePadding>
                                             <MockURLRow
                                               mockURL={formatMockUrl(
                                                 operation,
                                                 (value as ReqRespPair).response
-                                                  .dispatchCriteria,
-                                              )}
+                                                  .dispatchCriteria
+                                          )}
                                             />
                                           </ListItem>
                                         )
@@ -282,7 +284,7 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                         </ListItem>
                                       ) : (
                                         <></>
-                                      ),
+                                      )
                                   )}
                                 </List>
                               ) : (

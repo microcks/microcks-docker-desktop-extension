@@ -25,6 +25,7 @@ import {
 } from '../types/Service';
 import { useDockerDesktopClient } from '../utils/ddclient';
 import ClipboardCopy from './ClipboardCopy';
+import { Stack } from '@mui/material';
 
 interface MockDestinationsRowProps {
   service: Service;
@@ -40,21 +41,43 @@ const MockDestinationsRow: React.FC<MockDestinationsRowProps> = ({
   const ddClient = useDockerDesktopClient();
 
   const getAsyncUrl = (binding: string): string => {
-    let url = "";
+    let url = "localhost";
     if (binding === 'WS') {
-      url = `http://localhost:${8081 + config.portOffset}/api/ws/`;
+      let serviceName = service.name.replace(/\s/g, '+');
+      let versionName = service.version.replace(/\s/g, '+');
+      let operationName = removeVerbInUrl(operation.name);
+      // if(dispatchCriteria != null) {}
+
+      url = `${url}:${8081 + config.portOffset}/api/ws/${serviceName}/${versionName}/${operationName}`;
     } else if (binding === 'KAFKA') {
-      url = `localhost:${9092 + config.portOffset}`;
+      url = `${url}:${9092 + config.portOffset}`;
     }
     return url;
   }
 
+  const removeVerbInUrl = (operationName: string): string => {
+    if (
+      operationName.startsWith('GET ') ||
+      operationName.startsWith('PUT ') ||
+      operationName.startsWith('POST ') ||
+      operationName.startsWith('DELETE ') ||
+      operationName.startsWith('OPTIONS ') ||
+      operationName.startsWith('PATCH ') ||
+      operationName.startsWith('HEAD ') ||
+      operationName.startsWith('TRACE ') ||
+      operationName.startsWith('SUBSCRIBE ') ||
+      operationName.startsWith('PUBLISH ')
+    ) {
+      operationName = operationName.slice(operationName.indexOf(' ') + 1);
+    }
+    return operationName;
+  };
+
   const formatAsyncDestination = (binding: string): string => {
     let name = "";
     if (binding === 'WS') {
-      name = service.name.replace(/\s/g, '+') +
-        '/' + service.version.replace(/\s/g, '+');
-        '/' + operation.name.replace(operation.method + ' ', '');
+      const bindings: any = operation.bindings
+      name = bindings[binding].method;
     } else if (binding === 'KAFKA') {
       name = service.name.replace(/\s/g, '').replace(/-/g, '') +
         '-' + service.version +
@@ -64,12 +87,11 @@ const MockDestinationsRow: React.FC<MockDestinationsRowProps> = ({
   };
 
   return (
-    <>
+    <Stack spacing={2}>
       {Object.keys(operation.bindings).map((binding: any) =>
         binding === 'KAFKA' || binding === 'WS' ? (
           <Box
             key={binding}
-            marginLeft={1}
             display="flex"
             flexDirection="column"
           >
@@ -80,32 +102,38 @@ const MockDestinationsRow: React.FC<MockDestinationsRowProps> = ({
               </Link>
               <ClipboardCopy copyText={getAsyncUrl(binding)} />
             </Typography>
-            <Typography variant="body1">
-              {binding} destination:{' '}
-              <Link variant="subtitle1" underline="hover">
-                {formatAsyncDestination(binding)}
-              </Link>
-              <ClipboardCopy copyText={formatAsyncDestination(binding) || ''} />
-            </Typography>
+            {binding == 'KAFKA' && (
+              <Typography variant="body1">
+                {binding} destination: {''}
+                <Link variant="subtitle1" underline="hover">
+                  {formatAsyncDestination(binding)}
+                </Link>
+                <ClipboardCopy copyText={formatAsyncDestination(binding) || ''} />
+              </Typography>
+            )}
+            {binding == 'WS' && (
+              <Typography variant="body1">
+                {binding} method: {''}
+                <Typography variant="body1" component="span" fontWeight="600">
+                  {formatAsyncDestination(binding)}
+                </Typography>
+              </Typography>
+            )}
           </Box>
         ) : (
           <Box
             key={binding}
-            marginLeft={1}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
+            display="flex"
+            flexWrap="wrap"
           >
             <WarningAmberIcon />
             <Typography variant="body1" component="span" marginLeft={1}>
-            This extension does not support the {binding} binding at this time.
+              This extension does not support the {binding} binding at this time.
             </Typography>
           </Box>
         ),
       )}
-    </>
+    </Stack>
   )
 };
 

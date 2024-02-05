@@ -72,7 +72,7 @@ const Services = ({ config }: { config: ExtensionConfig }) => {
 
   return (
     <>
-      <Box sx={{ width: '100%', alignItems: 'center' }} my={5}>
+      <Box sx={{ width: '100%', alignItems: 'center' }} mt={5} mb={2}>
         <Box display="flex" flex="row" justifyContent="space-between">
           <Typography variant="h3">Services</Typography>
           <Button
@@ -89,9 +89,9 @@ const Services = ({ config }: { config: ExtensionConfig }) => {
             <TableContainer>
               <Table aria-label="collapsible table">
                 <TableBody>
-                  {services.map((service) => (
+                  {services.map((service, index) => (
                     <ServiceRow
-                      key={service.id}
+                      key={service.id + index}
                       service={service}
                       config={config}
                     />

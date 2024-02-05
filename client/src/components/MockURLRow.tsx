@@ -16,10 +16,12 @@
 import LaunchIcon from '@mui/icons-material/Launch';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import React from 'react';
 import { useDockerDesktopClient } from '../utils/ddclient';
 import ClipboardCopy from './ClipboardCopy';
+import { Operation, Service } from '../types/Service';
 
 interface MockURLRowProps {
   mockURL: string;
