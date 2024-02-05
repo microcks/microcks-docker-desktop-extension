@@ -283,7 +283,7 @@ const ServiceRow = (props: { service: Service; config: ExtensionConfig }) => {
                                           />
                                         </ListItem>
                                       ) : (
-                                        <></>
+                                        <React.Fragment key={index}></React.Fragment>
                                       )
                                   )}
                                 </List>
