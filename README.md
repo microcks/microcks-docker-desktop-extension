@@ -4,6 +4,7 @@
 [![Container](https://img.shields.io/docker/v/microcks/microcks-docker-desktop-extension?sort=semver&color=blue&logo=docker&style=for-the-badge&label=Docker.io)](https://hub.docker.com/r/microcks/microcks-docker-desktop-extension/tags)
 [![License](https://img.shields.io/github/license/microcks/microcks?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Project Chat](https://img.shields.io/badge/discord-microcks-pink.svg?color=7289da&style=for-the-badge&logo=discord)](https://microcks.io/discord-invite/)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-docker-desktop-extension.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-docker-desktop-extension?ref=badge_shield)
 
 This extension tries to simplify the getting started experience for developers using Microcks in their local environments. This extension will start the components to run a local deployment of Microcks using container images.
 
@@ -64,3 +65,7 @@ Reset
 docker extension dev reset microcks/microcks-docker-desktop-extension:latest
 ```
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-docker-desktop-extension.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-docker-desktop-extension?ref=badge_large)
