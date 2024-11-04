@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DockerMuiThemeProvider } from '@docker/docker-mui-theme';
+import { DockerMuiV5ThemeProvider } from '@docker/docker-mui-theme';
 import CssBaseline from '@mui/material/CssBaseline';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-ReactDOM.render(
+ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <DockerMuiThemeProvider>
+    <DockerMuiV5ThemeProvider>
       <CssBaseline />
       <App />
-    </DockerMuiThemeProvider>
-  </React.StrictMode>,
-  document.getElementById('root'),
+    </DockerMuiV5ThemeProvider>
+  </React.StrictMode>
 );
