@@ -41,7 +41,7 @@ LABEL org.opencontainers.image.title="Microcks" \
     com.docker.extension.additional-urls="[{\"title\":\"Getting started\",\"url\":\"https://microcks.io/documentation/getting-started\"},{\"title\":\"Source code\",\"url\":\"https://github.com/microcks/microcks-docker-desktop-extension\"}]" \
     com.docker.extension.changelog=""
 
-COPY --from=client-builder /app/client/dist ui
+COPY --from=client-builder /app/client/build ui
 COPY docker-compose.yaml .
 COPY metadata.json .
 COPY host ./host
