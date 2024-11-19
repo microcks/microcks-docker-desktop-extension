@@ -15,8 +15,9 @@
  */
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { PropsWithChildren } from 'react';
 
-const Footer: React.FC = ({ children }) => {
+const Footer: React.FC<PropsWithChildren> = ({ children }) => {
   return (
     <Box textAlign="center" paddingBottom={3} marginTop="auto">
       {children}
