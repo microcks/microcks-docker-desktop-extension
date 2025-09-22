@@ -15,23 +15,10 @@
  */
 import React, { useEffect, useState } from 'react';
 
-import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import SettingsIcon from '@mui/icons-material/Settings';
 import Backdrop from '@mui/material/Backdrop';
-import IconButton from '@mui/material/IconButton';
 
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
-import Link from '@mui/material/Link';
-import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
 
 import { ExecStreamOptions } from '@docker/extension-api-client-types/dist/v1';
 import './App.css';
@@ -47,11 +34,7 @@ import { sendMetric } from './api/metrics';
 import { ensureNetworkExists } from './api/network';
 import { ensureVolumeExists } from './api/volume';
 import AlertDialog from './components/AlertDialog';
-import ClipboardCopy from './components/ClipboardCopy';
 import DeleteDialog from './components/DeleteDialog';
-import Footer from './components/Footer';
-import ImportDialog from './components/ImportDialog';
-import Services from './components/Services';
 import SettingsDialog from './components/Settings';
 import { ContainerStatus } from './types/ContainerStatus';
 import { ExtensionConfig } from './types/ExtensionConfig';
