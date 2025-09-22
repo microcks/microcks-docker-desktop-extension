@@ -63,6 +63,9 @@ import {
   POSTMAN_CONTAINER
 } from './utils/constants';
 import { useDockerDesktopClient } from './utils/ddclient';
+import InitializingView from './components/views/InitializingView';
+import NotRunningView from './components/views/NotRunningView';
+import RunningView from './components/views/RunningView';
 
 const isWindows = () => {
   const platform = useDockerDesktopClient().host.platform;
@@ -763,203 +766,21 @@ const App = () => {
   return (
     <Container>
       {status === 'INITIALIZING' ? (
-        <Stack
-          sx={{
-            display: 'flex',
-            flexGrow: 1,
-            height: '90vh',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          spacing={5}
-        >
-          <CircularProgress color="primary" />
-        </Stack>
+        <InitializingView />
       ) : status == 'NOT_RUNNING' ? (
-        <>
-          <Stack
-            sx={{
-              display: 'flex',
-              flexGrow: 1,
-              height: '90vh',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Box
-              m={4}
-              sx={{
-                width: 450,
-                maxWidth: { xs: 450, md: 350 },
-              }}
-              component="img"
-              src={
-                uiMode === 'light'
-                  ? 'assets/images/microcks-logo-blue-baseline-tweet.png'
-                  : 'assets/images/microcks-logo-white-baseline-tweet.png'
-              }
-              alt="Microcks Logo"
-            />
-            <Paper
-              elevation={3}
-              sx={{
-                margin: 4,
-                padding: 2,
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'row',
-              }}
-            >
-              {!appStatus.isRunning && (
-                <Chip variant="outlined" color="error" label="STOPPED" />
-              )}
-              <Box
-                alignContent="center"
-                display="flex"
-                alignItems="center"
-                mx={1}
-              >
-                <RocketLaunchIcon />
-              </Box>
-              <Box
-                flexGrow={1}
-                alignContent="center"
-                display="flex"
-                alignItems="center"
-              >
-                <Typography variant="subtitle1">
-                  Microcks is not running. First launch can take some time while
-                  we're pulling the container images.
-                </Typography>
-              </Box>
-              <Box
-                flexGrow={1}
-                alignContent="center"
-                display="flex"
-                alignItems="center"
-              ></Box>
-            </Paper>
-            <Stack m={2} spacing={2} direction="row">
-              <Button
-                variant="outlined"
-                size="large"
-                startIcon={<SettingsIcon />}
-                onClick={handleOpenSettings}
-              >
-                Settings
-              </Button>
-              <Button variant="contained" size="large" onClick={launchMicrocks}>
-                Launch Microcks
-              </Button>
-            </Stack>
-          </Stack>
-          <Footer>
-            {appStatus.exists && (
-              <Link onClick={deleteMicrocksDialog} component="button">
-                Delete Microcks
-              </Link>
-            )}
-          </Footer>
-        </>
+        <NotRunningView 
+          uiMode={uiMode}
+          appStatus={appStatus}
+          onLaunchMicrocks={launchMicrocks}
+          onOpenSettings={handleOpenSettings}
+          onDeleteMicrocks={deleteMicrocksDialog}
+        />
       ) : (
-        <Box
-          display="flex"
-          flexDirection="column"
-          justifyContent="flex-start"
-          height="95vh"
-        >
-          <Box
-            sx={{ display: 'flex', width: '100%', alignItems: 'center' }}
-            my={1}
-          >
-            <Box alignContent="flex-start" textAlign="left" flexGrow={1}>
-              <Typography sx={{ fontWeight: 'bolder' }} variant="h5">
-                Microcks
-              </Typography>
-              <Typography variant="subtitle1" color="InactiveCaptionText">
-                API Mocking and Testing for REST, GraphQL, gRPC and AsyncAPI
-              </Typography>
-            </Box>
-            <Box>
-              <Tooltip title="Settings">
-                <IconButton onClick={handleOpenSettings}>
-                  <SettingsIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
-            <Box m={2}>
-              <Button variant="contained" color="error" onClick={stopMicrocks}>
-                Stop Microcks
-              </Button>
-            </Box>
-          </Box>
-          <Paper
-            elevation={3}
-            sx={{
-              marginTop: 4,
-              padding: 2,
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'row',
-            }}
-          >
-            <Chip variant="filled" color="success" label="RUNNING" />
-            <Box
-              alignContent="center"
-              display="flex"
-              alignItems="center"
-              mx={1}
-            >
-              <DoneOutlinedIcon />
-            </Box>
-            <Box
-              flexGrow={1}
-              alignContent="center"
-              display="flex"
-              alignItems="center"
-            >
-              <Typography variant="subtitle1" component="span">
-                Microcks is running. To access the UI navigate to:{' '}
-                <Link
-                  onClick={() =>
-                    ddClient.host.openExternal(
-                      `http://localhost:${8080 + config.portOffset}/#/`,
-                    )
-                  }
-                  variant="subtitle1"
-                  component="span"
-                >
-                  http://localhost:{8080 + config.portOffset}
-                </Link>
-                <IconButton
-                  onClick={() =>
-                    ddClient.host.openExternal(
-                      `http://localhost:${8080 + config.portOffset}/#/`,
-                    )
-                  }
-                  component="span"
-                  size="small"
-                >
-                  <OpenInNewIcon
-                    fontSize="small"
-                  />
-                </IconButton>
-                <ClipboardCopy
-                  copyText={`http://localhost:${8080 + config.portOffset}/#/`}
-                  size="small"
-                />
-              </Typography>
-            </Box>
-          </Paper>
-          <Services config={config} />
-          <Footer>
-            {appStatus.exists && (
-              <Link onClick={deleteMicrocksDialog} component="button">
-                Delete Microcks
-              </Link>
-            )}
-          </Footer>
-        </Box>
+        <RunningView
+          appStatus={appStatus}
+          onOpenSettings={handleOpenSettings}
+          onDeleteMicrocks={deleteMicrocksDialog} config={config} onStopMicrocks={stopMicrocks}
+          />
       )}
       <SettingsDialog
         config={config}
