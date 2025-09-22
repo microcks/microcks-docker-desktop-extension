@@ -81,12 +81,7 @@ const NotRunningView: React.FC<NotRunningViewProps> = ({
           {!appStatus.isRunning && (
             <Chip variant="outlined" color="error" label="STOPPED" />
           )}
-          <Box
-            alignContent="center"
-            display="flex"
-            alignItems="center"
-            mx={1}
-          >
+          <Box alignContent="center" display="flex" alignItems="center" mx={1}>
             <RocketLaunchIcon />
           </Box>
           <Box

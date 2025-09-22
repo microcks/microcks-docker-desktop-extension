@@ -63,10 +63,7 @@ const RunningView: React.FC<RunningViewProps> = ({
       justifyContent="flex-start"
       height="95vh"
     >
-      <Box
-        sx={{ display: 'flex', width: '100%', alignItems: 'center' }}
-        my={1}
-      >
+      <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }} my={1}>
         <Box alignContent="flex-start" textAlign="left" flexGrow={1}>
           <Typography sx={{ fontWeight: 'bolder' }} variant="h5">
             Microcks
@@ -99,12 +96,7 @@ const RunningView: React.FC<RunningViewProps> = ({
         }}
       >
         <Chip variant="filled" color="success" label="RUNNING" />
-        <Box
-          alignContent="center"
-          display="flex"
-          alignItems="center"
-          mx={1}
-        >
+        <Box alignContent="center" display="flex" alignItems="center" mx={1}>
           <DoneOutlinedIcon />
         </Box>
         <Box
